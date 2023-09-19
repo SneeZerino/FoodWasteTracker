@@ -1,0 +1,27 @@
+{
+  "name": "foodwastetracker",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "expo": "~49.0.10",
+    "expo-barcode-scanner": "~12.5.3",
+    "expo-camera": "~13.4.4",
+    "expo-splash-screen": "~0.20.5",
+    "expo-status-bar": "~1.6.0",
+    "express": "^4.18.2",
+    "mysql": "^2.18.1",
+    "react": "18.2.0",
+    "react-native": "0.72.4",
+    "react-native-modal": "^13.0.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0"
+  },
+  "private": true
+}
