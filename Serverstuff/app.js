@@ -1,49 +1,66 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const mysql = require('mysql');
+const { Pool, Client } = require('pg');
 
 const app = express();
 const port = 3006;
 
-// Configure MySQL database connection
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'admin',
-  database: 'foodwastetracker',
+// Configure PostgreSQL database connection
+const pool = new Pool({
+  user: 'casaos',
+  host: '192.168.1.109',
+  database: 'casaos',
+  password: 'casaos',
+  port: 5432,
 });
 
-db.connect((err) => {
+pool.connect((err) => {
   if (err) {
-    console.error('Error connecting to MySQL:', err);
+    console.error('Error connecting to PostgreSQL:', err);
     return;
   }
-  console.log('Connected to MySQL database');
+  console.log('Connected to PostgreSQL database');
 });
 
 // Middleware for parsing JSON data
 app.use(bodyParser.json());
+
+// API endpoint for adding a product
+app.post('/api/foodwastetracker/products', (req, res) => {
+  const { name, expiry_date } = req.body;
+
+  // Insert the new product into the database
+  const insertProductQuery = 'INSERT INTO products (name, expiry_date) VALUES ($1, $2)';
+  pool.query(insertProductQuery, [name, expiry_date], (err) => {
+    if (err) {
+      console.error('Error adding product:', err);
+      res.status(500).json({ error: 'An error occurred' });
+      return;
+    }
+    res.status(201).json({ message: 'Product added successfully' });
+  });
+});
 
 // API endpoint for user registration
 app.post('/api/register', (req, res) => {
   const { username, password } = req.body;
 
   // Check if the username already exists in the database
-  const checkUserQuery = 'SELECT * FROM users WHERE username = ?';
-  db.query(checkUserQuery, [username], (err, results) => {
+  const checkUserQuery = 'SELECT * FROM users WHERE username = $1';
+  pool.query(checkUserQuery, [username], (err, results) => {
     if (err) {
       console.error('Error checking username:', err);
       res.status(500).json({ error: 'An error occurred' });
       return;
     }
 
-    if (results.length > 0) {
+    if (results.rows.length > 0) {
       // Username already exists
       res.status(400).json({ error: 'Username already taken' });
     } else {
       // Insert the new user into the database
-      const insertUserQuery = 'INSERT INTO users (username, password) VALUES (?, ?)';
-      db.query(insertUserQuery, [username, password], (err) => {
+      const insertUserQuery = 'INSERT INTO users (username, password) VALUES ($1, $2)';
+      pool.query(insertUserQuery, [username, password], (err) => {
         if (err) {
           console.error('Error registering user:', err);
           res.status(500).json({ error: 'An error occurred' });

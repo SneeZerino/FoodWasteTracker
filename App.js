@@ -36,8 +36,8 @@ const App = () => {
 
   const handleManualAdd = async () => {
     try {
-      // Replace with your Raspberry Pi's local IP address and port
-      const serverUrl = 'http://192.168.1.109:5432';
+      // Raspberry Pi's local IP address and port
+      const serverUrl = 'http://192.168.1.109:3006';
 
       // Define the product data to be inserted
       const productData = {
