@@ -94,7 +94,7 @@ const App = () => {
       if (response.ok) {
         // Registration successful
         console.log('Registration successful');
-        // Optionally, you can update the UI or show a success message
+        // Optionally, update the UI or show a success message
         // Close the registration modal
         setRegistrationUsername('');
         setRegistrationPassword('');
@@ -115,10 +115,29 @@ const App = () => {
     setScannerVisible(true);
   };
 
-  const handleLogin = () => {
-    // Fake authentication (replace later with actual authentication logic)
-    if (username === 'demo' && password === 'password') {
-      setLoggedIn(true);
+  const handleLogin = async () => {
+    try {
+      const serverUrl = 'http://192.168.1.109:3006';
+
+      const response = await fetch(`${serverUrl}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+  
+      if (response.ok) {
+        // Authentication successful
+        setLoggedIn(true);
+      } else {
+        // Authentication failed
+        console.error('Authentication failed:', response.status);
+        // Optionally, show an error message to the user
+      }
+    } catch (error) {
+      console.error('Error during authentication:', error);
+      // Optionally, show an error message to the user
     }
   };
 
