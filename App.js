@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform } from 'react-native';
+import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform} from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 
 const App = () => {
@@ -15,6 +15,9 @@ const App = () => {
   const [expiryDate, setExpiryDate] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false); // Use a single state variable for modal visibility
 
+  const [registrationUsername, setRegistrationUsername] = useState('');
+  const [registrationPassword, setRegistrationPassword] = useState('');
+  const [registrationError, setRegistrationError] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -23,7 +26,8 @@ const App = () => {
         setHasPermission(status === 'granted');
       }
     })();
-  }, []);
+  }, 
+  []);
 
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
@@ -65,6 +69,44 @@ const App = () => {
       }
     } catch (error) {
       console.error('Error adding product:', error);
+    }
+  };
+
+  const handleRegistration = async () => {
+    try {
+      // Raspberry Pi's local IP address and port
+      const serverUrl = 'http://192.168.1.109:3006';
+
+      // Define the registration data to be sent
+      const registrationData = {
+        username: registrationUsername,
+        password: registrationPassword,
+      };
+
+      const response = await fetch(`${serverUrl}/api/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registrationData),
+      });
+
+      if (response.ok) {
+        // Registration successful
+        console.log('Registration successful');
+        // Optionally, you can update the UI or show a success message
+        // Close the registration modal
+        setRegistrationUsername('');
+        setRegistrationPassword('');
+        setRegistrationError(null);
+      } else {
+        // Registration failed, handle errors or show an error message
+        const errorData = await response.json();
+        setRegistrationError(errorData.error || 'An error occurred during registration');
+      }
+    } catch (error) {
+      console.error('Error during registration:', error);
+      setRegistrationError('An error occurred during registration');
     }
   };
 
@@ -178,7 +220,7 @@ const App = () => {
       </Modal>
         </View>
       );
-      
+
     } else {
       return (
         <View style={{ alignItems: 'center' }}>
@@ -199,6 +241,26 @@ const App = () => {
           <TouchableOpacity onPress={handleLogin} style={{ backgroundColor: 'blue', padding: 10 }}>
             <Text style={{ color: 'white' }}>Login</Text>
           </TouchableOpacity>
+
+          {/* Registration Form */}
+          <Text>Register a new account:</Text>
+          <TextInput
+            placeholder="New Username"
+            value={registrationUsername}
+            onChangeText={(text) => setRegistrationUsername(text)}
+            style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+          />
+          <TextInput
+            placeholder="New Password"
+            value={registrationPassword}
+            onChangeText={(text) => setRegistrationPassword(text)}
+            secureTextEntry
+            style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+          />
+          <TouchableOpacity onPress={handleRegistration} style={{ backgroundColor: 'green', padding: 10 }}>
+            <Text style={{ color: 'white' }}>Register</Text>
+          </TouchableOpacity>
+          {registrationError && <Text style={{ color: 'red' }}>{registrationError}</Text>}
         </View>
       );
     }
@@ -220,9 +282,6 @@ const App = () => {
       </View>
     </ImageBackground>
   );
-
-   // Add a Modal for manual product entry
-   
 };
 
 export default App;
