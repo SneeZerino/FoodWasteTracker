@@ -16,28 +16,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 16
-          
-      - name: Cache npm dependencies
-        uses: actions/cache@v2
-        with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-      
+          node-version: 18.16.1 # Use the desired Node.js version
+
       - name: Install dependencies
         run: npm install
 
-      - name: Build and test
-        run: |
-          # Replace with your build and test commands
-          npm run build
-          npm test
+      - name: Run tests
+        run: npm test
 
-      - name: Deploy to production
-        if: success()
-        run: |
-          # Replace with your deployment script or commands
-          # For example, deploy to a hosting service like Heroku, Netlify, or AWS
-          # Or, you can use SSH to deploy to a remote server
+      - name: Build and package application
+        run: npm run build
+
+
