@@ -122,6 +122,13 @@ const App = () => {
     }
   };
 
+  const handleLogout = () => {
+    // Perform the logout action here
+    // Reset the 'loggedIn' state to false
+    setLoggedIn(false);
+    // Navigate the user back to the login screen
+  };
+
   const renderContent = () => {
     if (loggedIn) {
       return (
@@ -219,6 +226,7 @@ const App = () => {
         </View>
       </Modal>
         </View>
+
       );
 
     } else {
@@ -271,6 +279,23 @@ const App = () => {
       source={require('./Pictures/background.jpg')}
       style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
     >
+      {/* Logout button */}
+      {loggedIn && (
+        <TouchableOpacity
+          onPress={handleLogout}
+          style={{
+            position: 'absolute',
+            top: 50,
+            right: 20,
+            backgroundColor: 'red', // Customize the button's appearance
+            padding: 10,
+            borderRadius: 5,
+          }}
+        >
+          <Text style={{ color: 'white' }}>Logout</Text>
+        </TouchableOpacity>
+      )}
+
       <View
         style={{
           backgroundColor: 'rgba(255, 255, 255, 0.7)',
