@@ -22,7 +22,7 @@ jobs:
         run: |
           pwd
           ls -la
-          cd FoodWasteTracker/FoodWasteTracker
+          cd FoodWasteTracker
           pwd
           ls -la  # List files in the current directory
 
