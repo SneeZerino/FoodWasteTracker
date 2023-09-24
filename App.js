@@ -14,10 +14,12 @@ const App = () => {
   const [productName, setProductName] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false); // Use a single state variable for modal visibility
+  const [isRegistrationVisible, setRegistrationVisible] = useState(false);
 
   const [registrationUsername, setRegistrationUsername] = useState('');
   const [registrationPassword, setRegistrationPassword] = useState('');
   const [registrationError, setRegistrationError] = useState(null);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
@@ -62,6 +64,8 @@ const App = () => {
       if (response.ok) {
         // Product added successfully
         console.log('Product added successfully');
+        setProductName("");
+        setExpiryDate("");
         // Optionally, you can update the UI or show a success message
         // Close the manual add modal
         setIsModalVisible(false);
@@ -96,6 +100,7 @@ const App = () => {
       if (response.ok) {
         // Registration successful
         console.log('Registration successful');
+        setRegistrationSuccess(true);
         // Optionally, update the UI or show a success message
         // Close the registration modal
         setRegistrationUsername('');
@@ -258,7 +263,39 @@ const App = () => {
         </View>
       </Modal>
         </View>
+      );
+    } else if (isRegistrationVisible) {
+      // Render the registration form
+      return (
+        <View style={{ alignItems: 'center' }}>
+          {registrationSuccess ? (
+            <Text style={{ color: 'green' }}>Registration successful</Text>
+          ) : null}
+          <Text>Register a new account:</Text>
+          <TextInput
+            placeholder="New Username"
+            value={registrationUsername}
+            onChangeText={(text) => setRegistrationUsername(text)}
+            style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+          />
+          <TextInput
+            placeholder="New Password"
+            value={registrationPassword}
+            onChangeText={(text) => setRegistrationPassword(text)}
+            secureTextEntry
+            style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+          />
+          <TouchableOpacity onPress={handleRegistration} style={{ backgroundColor: 'green', padding: 10 }}>
+            <Text style={{ color: 'white' }}>Register</Text>
+          </TouchableOpacity>
+    
+          {/* "Back to Login" button */}
+          <TouchableOpacity onPress={() => { setRegistrationVisible(false); setRegistrationSuccess(false); }} style={{ backgroundColor: 'red', padding: 10, marginTop: 10 }}>
+            <Text style={{ color: 'white' }}>Back to Login</Text>
+          </TouchableOpacity>
 
+          {registrationError && <Text style={{ color: 'red' }}>{registrationError}</Text>}
+        </View>
       );
 
     } else {
@@ -281,31 +318,15 @@ const App = () => {
           <TouchableOpacity onPress={handleLogin} style={{ backgroundColor: 'blue', padding: 10 }}>
             <Text style={{ color: 'white' }}>Login</Text>
           </TouchableOpacity>
-
-          {/* Registration Form */}
-          <Text>Register a new account:</Text>
-          <TextInput
-            placeholder="New Username"
-            value={registrationUsername}
-            onChangeText={(text) => setRegistrationUsername(text)}
-            style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
-          />
-          <TextInput
-            placeholder="New Password"
-            value={registrationPassword}
-            onChangeText={(text) => setRegistrationPassword(text)}
-            secureTextEntry
-            style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
-          />
-          <TouchableOpacity onPress={handleRegistration} style={{ backgroundColor: 'green', padding: 10 }}>
-            <Text style={{ color: 'white' }}>Register</Text>
+    
+          {/* "Create User" button */}
+          <TouchableOpacity onPress={() => setRegistrationVisible(true)} style={{ backgroundColor: 'green', padding: 10, marginTop: 10 }}>
+            <Text style={{ color: 'white' }}>Create User</Text>
           </TouchableOpacity>
-          {registrationError && <Text style={{ color: 'red' }}>{registrationError}</Text>}
         </View>
       );
     }
-  };
-
+  }
   return (
     <ImageBackground
       source={require('./Pictures/background.jpg')}
