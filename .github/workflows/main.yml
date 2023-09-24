@@ -25,10 +25,7 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-
-      - name: Build and package Android application
-        run: npm run build-android
-      
+              
       - name: Build and package iOS application
         run: npm run build-ios
         
