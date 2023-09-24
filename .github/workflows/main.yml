@@ -18,6 +18,14 @@ jobs:
         with:
           node-version: 18.16.1 # Use the desired Node.js version
 
+      - name: Debug
+        run: |
+          pwd
+          ls -la
+          cd FoodWasteTracker
+          pwd
+          ls -la  # List files in the current directory
+
       - name: Install dependencies
         run: npm install
 
@@ -26,5 +34,3 @@ jobs:
 
       - name: Build and package application
         run: npm run build
-
-
