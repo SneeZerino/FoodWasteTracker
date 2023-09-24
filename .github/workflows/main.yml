@@ -17,14 +17,14 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 18.16.1 # Use the desired Node.js version
-          
-      - name: Check Node.js version
-        run: node --version
 
       - name: Debug
         run: |
           pwd
           ls -la
+          cd FoodWasteTracker  # Navigate to the correct directory
+          pwd
+          ls -la  # List files in the current directory
 
       - name: Install dependencies
         run: npm install
