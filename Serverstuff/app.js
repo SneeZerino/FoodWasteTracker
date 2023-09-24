@@ -27,11 +27,10 @@ app.use(bodyParser.json());
 
 // API endpoint for adding a product
 app.post('/api/foodwastetracker/products', (req, res) => {
-  const { name, expiry_date } = req.body;
+  const { name, expiry_date, user_id } = req.body;
 
-  // Insert the new product into the database
-  const insertProductQuery = 'INSERT INTO products (name, expiry_date) VALUES ($1, $2)';
-  pool.query(insertProductQuery, [name, expiry_date], (err) => {
+  const insertProductQuery = 'INSERT INTO products (name, expiry_date, user_id) VALUES ($1, $2, $3)';
+  pool.query(insertProductQuery, [name, expiry_date, user_id], (err) => {
     if (err) {
       console.error('Error adding product:', err);
       res.status(500).json({ error: 'An error occurred' });
@@ -46,7 +45,7 @@ app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
 
   // Query the database to check if the user exists
-  const checkUserQuery = 'SELECT * FROM users WHERE username = $1 AND password = $2';
+  const checkUserQuery = 'SELECT id FROM users WHERE username = $1 AND password = $2'; // Select the user's ID
   pool.query(checkUserQuery, [username, password], (err, results) => {
     if (err) {
       console.error('Error during login:', err);
@@ -56,7 +55,8 @@ app.post('/api/login', async (req, res) => {
 
     if (results.rows.length === 1) {
       // User exists and credentials are correct
-      res.status(200).json({ message: 'Login successful' });
+      const userId = results.rows[0].id; // Extract the user's ID
+      res.status(200).json({ message: 'Login successful', userId }); // Include the user's ID in the response
     } else {
       // User not found or invalid credentials
       res.status(401).json({ error: 'Invalid username or password' });

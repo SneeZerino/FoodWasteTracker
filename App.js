@@ -18,6 +18,7 @@ const App = () => {
   const [registrationUsername, setRegistrationUsername] = useState('');
   const [registrationPassword, setRegistrationPassword] = useState('');
   const [registrationError, setRegistrationError] = useState(null);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -42,13 +43,14 @@ const App = () => {
     try {
       // Raspberry Pi's local IP address and port
       const serverUrl = 'http://192.168.1.109:3006';
-
+  
       // Define the product data to be inserted
       const productData = {
         name: productName,
         expiry_date: expiryDate,
+        user_id: userId, // Replace userId with the user ID obtained after login
       };
-
+  
       const response = await fetch(`${serverUrl}/api/foodwastetracker/products`, {
         method: 'POST',
         headers: {
@@ -56,13 +58,13 @@ const App = () => {
         },
         body: JSON.stringify(productData),
       });
-
+  
       if (response.ok) {
         // Product added successfully
         console.log('Product added successfully');
         // Optionally, you can update the UI or show a success message
         // Close the manual add modal
-        setIsModalVisible(false); // Set modal visibility to false to close it
+        setIsModalVisible(false);
       } else {
         // Handle errors or show an error message
         console.error('Error adding product:', response.status);
@@ -118,7 +120,7 @@ const App = () => {
   const handleLogin = async () => {
     try {
       const serverUrl = 'http://192.168.1.109:3006';
-
+  
       const response = await fetch(`${serverUrl}/api/login`, {
         method: 'POST',
         headers: {
@@ -128,8 +130,19 @@ const App = () => {
       });
   
       if (response.ok) {
-        // Authentication successful
-        setLoggedIn(true);
+        const userData = await response.json();
+        console.log('Server Response:', userData); // Debugging statement
+  
+        if (userData.userId) {
+          // The server returned the user's ID
+          const user_id = userData.userId; // Use userData.userId
+          setLoggedIn(true);
+          setUserId(user_id);
+
+        } else {
+          // Handle the case where the server response does not include a user ID
+          console.error('Server response is missing user ID');
+        }
       } else {
         // Authentication failed
         console.error('Authentication failed:', response.status);
@@ -140,7 +153,7 @@ const App = () => {
       // Optionally, show an error message to the user
     }
   };
-
+  
   const handleLogout = () => {
     // Perform the logout action here
     // Reset the 'loggedIn' state to false
