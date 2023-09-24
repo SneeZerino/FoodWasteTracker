@@ -25,9 +25,6 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-              
-      - name: Build and package iOS application
-        run: npm run build-ios
         
       - name: Build and package Web application
         run: npm run build-web
