@@ -44,7 +44,7 @@ const App = () => {
   const handleManualAdd = async () => {
     try {
       // Raspberry Pi's local IP address and port
-      const serverUrl = 'http://192.168.1.109:3006';
+      const serverUrl = 'http://sneeze.internet-box.ch:3006';
   
       // Define the product data to be inserted
       const productData = {
@@ -81,7 +81,7 @@ const App = () => {
   const handleRegistration = async () => {
     try {
       // Raspberry Pi's local IP address and port
-      const serverUrl = 'http://192.168.1.109:3006';
+      const serverUrl = 'http://sneeze.internet-box.ch:3006';
 
       // Define the registration data to be sent
       const registrationData = {
@@ -124,7 +124,7 @@ const App = () => {
 
   const handleLogin = async () => {
     try {
-      const serverUrl = 'http://192.168.1.109:3006';
+      const serverUrl = 'http://sneeze.internet-box.ch:3006';
   
       const response = await fetch(`${serverUrl}/api/login`, {
         method: 'POST',
