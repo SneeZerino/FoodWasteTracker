@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform} from 'react-native';
+import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform, StyleSheet, Animated} from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 
 const App = () => {
@@ -21,7 +21,7 @@ const App = () => {
   const [registrationError, setRegistrationError] = useState(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [userId, setUserId] = useState(null);
-
+  
   useEffect(() => {
     (async () => {
       if (Platform.OS === 'android') {
@@ -41,11 +41,15 @@ const App = () => {
     setScannerVisible(false);
   };
 
-  const handleManualAdd = async () => {
+  const openScanner = async () => {
+    setScanned(false);
+    setScannerVisible(true);
+  };
+
+const serverUrl = 'http://sneeze.internet-box.ch:3006';
+
+const handleManualAdd = async () => {
     try {
-      // Raspberry Pi's local IP address and port
-      const serverUrl = 'http://sneeze.internet-box.ch:3006';
-  
       // Define the product data to be inserted
       const productData = {
         name: productName,
@@ -55,9 +59,7 @@ const App = () => {
   
       const response = await fetch(`${serverUrl}/api/foodwastetracker/products`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json',},
         body: JSON.stringify(productData),
       });
   
@@ -78,11 +80,8 @@ const App = () => {
     }
   };
 
-  const handleRegistration = async () => {
+const handleRegistration = async () => {
     try {
-      // Raspberry Pi's local IP address and port
-      const serverUrl = 'http://sneeze.internet-box.ch:3006';
-
       // Define the registration data to be sent
       const registrationData = {
         username: registrationUsername,
@@ -91,9 +90,7 @@ const App = () => {
 
       const response = await fetch(`${serverUrl}/api/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json',},
         body: JSON.stringify(registrationData),
       });
 
@@ -117,20 +114,11 @@ const App = () => {
     }
   };
 
-  const openScanner = async () => {
-    setScanned(false);
-    setScannerVisible(true);
-  };
-
-  const handleLogin = async () => {
+const handleLogin = async () => {
     try {
-      const serverUrl = 'http://sneeze.internet-box.ch:3006';
-  
       const response = await fetch(`${serverUrl}/api/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json',},
         body: JSON.stringify({ username, password }),
       });
   
@@ -159,7 +147,7 @@ const App = () => {
     }
   };
   
-  const handleLogout = () => {
+const handleLogout = () => {
     // Perform the logout action here
     // Reset the 'loggedIn' state to false
     setLoggedIn(false);
