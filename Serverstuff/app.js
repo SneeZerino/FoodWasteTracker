@@ -95,6 +95,21 @@ app.post('/api/register', (req, res) => {
   });
 });
 
+// Add a new API endpoint for fetching user items
+app.get('/api/user-items', async (req, res) => {
+  const { userId } = req.query; // You can pass the userId as a query parameter or in the request body, adjust accordingly
+
+  try {
+    // Query the database to fetch user items
+    const fetchUserItemsQuery = 'SELECT * FROM products WHERE user_id = $1';
+    const { rows } = await pool.query(fetchUserItemsQuery, [userId]);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching user items:', error);
+    res.status(500).json({ error: 'An error occurred' });
+  }
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

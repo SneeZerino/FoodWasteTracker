@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform, StyleSheet, Animated} from 'react-native';
+import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform, FlatList} from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 
 const App = () => {
@@ -21,6 +21,9 @@ const App = () => {
   const [registrationError, setRegistrationError] = useState(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [userItems, setUserItems] = useState([]); // State variable to store user's items
+  const [isStorageVisible, setStorageVisible] = useState(false);
+
   
   useEffect(() => {
     (async () => {
@@ -154,15 +157,64 @@ const handleLogout = () => {
     // Navigate the user back to the login screen
   };
 
+  useEffect(() => {
+    // Fetch the user's items when the component mounts or when the user logs in
+    if (loggedIn) {
+      fetchUserItems();
+    }
+  }, [loggedIn]);
+
+  const fetchUserItems = async () => {
+    try {
+      const response = await fetch(`${serverUrl}/api/user-items?userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setUserItems(data);
+      } else {
+        console.error('Failed to fetch user items:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching user items:', error);
+    }
+  };
+  
+  // Call the function to fetch user items when isStorageVisible is true
+  if (isStorageVisible) {
+    fetchUserItems();
+  }
+  
   const renderContent = () => {
     if (loggedIn) {
       return (
         <View style={{ alignItems: 'center' }}>
           <Text>Welcome, {username}!</Text>
+          
           <Button
             title="Add Groceries"
             onPress={() => setAddModalVisible(true)}
           />
+           <Button
+          title="Storage"
+          onPress={() => {
+            setStorageVisible(!isStorageVisible);
+            // Fetch user items when Storage button is pressed
+            if (!isStorageVisible) {
+              fetchUserItems();
+            }
+          }}
+        />
+        {isStorageVisible && (
+          <FlatList
+            data={userItems} // Replace 'userItems' with actual data source
+            keyExtractor={(item) => item.id.toString()} // Use a unique key for each item
+            renderItem={({ item }) => (
+              <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
+                <Text>Name: {item.name}</Text>
+                <Text>Expiry Date: {item.expiryDate}</Text>
+              </View>
+            )}
+          />
+        )}
           <Modal
             animationType="slide"
             transparent={true}
