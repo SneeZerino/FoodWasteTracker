@@ -20,11 +20,11 @@ const App = () => {
   const [registrationPassword, setRegistrationPassword] = useState('');
   const [registrationError, setRegistrationError] = useState(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [loginError, setLoginError] = useState(null);
   const [userId, setUserId] = useState(null);
   const [userItems, setUserItems] = useState([]); // State variable to store user's items
   const [isStorageVisible, setStorageVisible] = useState(false);
 
-  
   useEffect(() => {
     (async () => {
       if (Platform.OS === 'android') {
@@ -142,7 +142,8 @@ const handleLogin = async () => {
       } else {
         // Authentication failed
         console.error('Authentication failed:', response.status);
-        // Optionally, show an error message to the user
+        setLoginError('Invalid username or password');
+        console.log('Login error:', loginError);
       }
     } catch (error) {
       console.error('Error during authentication:', error);
@@ -151,8 +152,8 @@ const handleLogin = async () => {
   };
   
 const handleLogout = () => {
-    // Perform the logout action here
-    // Reset the 'loggedIn' state to false
+    setUsername('');
+    setPassword('');
     setLoggedIn(false);
     // Navigate the user back to the login screen
   };
@@ -358,6 +359,7 @@ const handleLogout = () => {
           <TouchableOpacity onPress={handleLogin} style={{ backgroundColor: 'blue', padding: 10 }}>
             <Text style={{ color: 'white' }}>Login</Text>
           </TouchableOpacity>
+          {loginError && <Text style={{ color: 'red' }}>{loginError}</Text>}
     
           {/* "Create User" button */}
           <TouchableOpacity onPress={() => setRegistrationVisible(true)} style={{ backgroundColor: 'green', padding: 10, marginTop: 10 }}>
@@ -398,6 +400,33 @@ const handleLogout = () => {
       >
         {renderContent()}
       </View>
+
+      {/* Add test IDs to buttons */}
+      {!loggedIn && (
+        <TouchableOpacity
+          onPress={() => setRegistrationVisible(true)}
+          style={{
+            backgroundColor: 'green',
+            padding: 10,
+            marginTop: 10,
+          }}
+          testID="createUserButton" // Add testID for registration button
+        >
+          <Text style={{ color: 'white' }}>Create User</Text>
+        </TouchableOpacity>
+      )}
+      {!loggedIn && (
+        <TouchableOpacity
+          onPress={handleLogin}
+          style={{
+            backgroundColor: 'blue',
+            padding: 10,
+          }}
+          testID="userloginbutton" // Add testID for login button
+        >
+          <Text style={{ color: 'white' }}>Login</Text>
+        </TouchableOpacity>
+      )}
     </ImageBackground>
   );
 };
