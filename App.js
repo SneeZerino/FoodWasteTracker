@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform, FlatList} from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
+import CommunityItemsScreen from './CommunityItemsScreen';
+
 
 const App = () => {
   const [username, setUsername] = useState('');
@@ -24,6 +26,10 @@ const App = () => {
   const [userId, setUserId] = useState(null);
   const [userItems, setUserItems] = useState([]); // State variable to store user's items
   const [isStorageVisible, setStorageVisible] = useState(false);
+  const [addtocommunity, setaddtocommunity] = useState(0);
+  const [communityVisible, setCommunityVisible] = useState(false);
+
+
 
   useEffect(() => {
     (async () => {
@@ -57,7 +63,8 @@ const handleManualAdd = async () => {
       const productData = {
         name: productName,
         expiry_date: expiryDate,
-        user_id: userId, // Replace userId with the user ID obtained after login
+        user_id: userId,// Replace userId with the user ID obtained after login
+        addtocommunity,
       };
   
       const response = await fetch(`${serverUrl}/api/foodwastetracker/products`, {
@@ -71,6 +78,7 @@ const handleManualAdd = async () => {
         console.log('Product added successfully');
         setProductName("");
         setExpiryDate("");
+        setaddtocommunity(0);
         // Optionally, you can update the UI or show a success message
         // Close the manual add modal
         setIsModalVisible(false);
@@ -158,6 +166,36 @@ const handleLogout = () => {
     // Navigate the user back to the login screen
   };
 
+const handleOfferToCommunity = async (itemId) => {
+    try {
+      // Make a POST request to update the item's addToCommunity property
+      const response = await fetch(`${serverUrl}/api/offer-to-community`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemId,
+        }),
+      });
+  
+      if (response.ok) {
+        // Item offered to the community successfully, update the state
+        setUserItems((prevItems) =>
+          prevItems.map((item) =>
+            item.id === itemId ? { ...item, addtocommunity: 1 } : item
+          )
+        );
+      } else {
+        console.error('Failed to offer item to the community:', response.status);
+      }
+    } catch (error) {
+      console.error('Error offering item to the community:', error);
+    }
+  };
+  
+  
+
   useEffect(() => {
     // Fetch the user's items when the component mounts or when the user logs in
     if (loggedIn) {
@@ -180,9 +218,12 @@ const handleLogout = () => {
   };
   
   // Call the function to fetch user items when isStorageVisible is true
-  if (isStorageVisible) {
-    fetchUserItems();
-  }
+  useEffect(() => {
+    // Fetch the user's items when isStorageVisible is true
+    if (loggedIn && isStorageVisible) {
+      fetchUserItems();
+    }
+  }, [loggedIn, isStorageVisible]);
   
   const renderContent = () => {
     if (loggedIn) {
@@ -190,6 +231,10 @@ const handleLogout = () => {
         <View style={{ alignItems: 'center' }}>
           <Text>Welcome, {username}!</Text>
           
+          <Button
+            title="Community"
+            onPress={() => setCommunityVisible(true)}
+          />
           <Button
             title="Add Groceries"
             onPress={() => setAddModalVisible(true)}
@@ -206,16 +251,34 @@ const handleLogout = () => {
         />
         {isStorageVisible && (
           <FlatList
-            data={userItems} // Replace 'userItems' with actual data source
-            keyExtractor={(item) => item.id.toString()} // Use a unique key for each item
+            data={userItems}
+            keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
               <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
                 <Text>Name: {item.name}</Text>
                 <Text>Expiry Date: {item.expiryDate}</Text>
+                {loggedIn && item.addtocommunity === 0 && (
+                  <TouchableOpacity
+                    onPress={() => handleOfferToCommunity(item.id)}
+                    style={{
+                      backgroundColor: 'purple',
+                      padding: 10,
+                      margin: 10,
+                      borderRadius: 5,
+                    }}
+                  >
+                    <Text style={{ color: 'white' }}>Offer to Community</Text>
+                  </TouchableOpacity>
+                )}
+                {loggedIn && item.addtocommunity === 1 && (
+                  <Text style={{ color: 'gray' }}>Currently offered to the Community</Text>
+                )}
               </View>
             )}
           />
+
         )}
+
           <Modal
             animationType="slide"
             transparent={true}
@@ -390,6 +453,10 @@ const handleLogout = () => {
           <Text style={{ color: 'white' }}>Logout</Text>
         </TouchableOpacity>
       )}
+      {/* Render CommunityItemsScreen when communityVisible is true */}
+        {communityVisible && (
+        <CommunityItemsScreen userId={userId} />
+       )}
 
       <View
         style={{

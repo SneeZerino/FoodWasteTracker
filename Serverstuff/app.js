@@ -27,10 +27,14 @@ app.use(bodyParser.json());
 
 // API endpoint for adding a product
 app.post('/api/foodwastetracker/products', (req, res) => {
-  const { name, expiry_date, user_id } = req.body;
+  const { name, expiry_date, user_id ,addtocommunity} = req.body;
 
-  const insertProductQuery = 'INSERT INTO products (name, expiry_date, user_id) VALUES ($1, $2, $3)';
-  pool.query(insertProductQuery, [name, expiry_date, user_id], (err) => {
+  if (!name || !expiry_date || user_id == null) {
+    return res.status(400).json({ error: 'Invalid input data' });
+  }
+
+  const insertProductQuery = 'INSERT INTO products (name, expiry_date, user_id, addtocommunity) VALUES ($1, $2, $3, $4)';
+  pool.query(insertProductQuery, [name, expiry_date, user_id, addtocommunity], (err) => {
     if (err) {
       console.error('Error adding product:', err);
       res.status(500).json({ error: 'An error occurred' });
@@ -97,7 +101,12 @@ app.post('/api/register', (req, res) => {
 
 // Add a new API endpoint for fetching user items
 app.get('/api/user-items', async (req, res) => {
-  const { userId } = req.query; // You can pass the userId as a query parameter or in the request body, adjust accordingly
+  const { userId } = req.query;
+
+  // Check if userId is a valid integer
+  if (!userId || isNaN(parseInt(userId))) {
+    return res.status(400).json({ error: 'Invalid userId' });
+  }
 
   try {
     // Query the database to fetch user items
@@ -107,6 +116,41 @@ app.get('/api/user-items', async (req, res) => {
   } catch (error) {
     console.error('Error fetching user items:', error);
     res.status(500).json({ error: 'An error occurred' });
+  }
+});
+
+
+// Add a new API endpoint for fetching community items
+app.get('/api/community-items', async (req, res) => {
+  try {
+    // Query the database to fetch community items
+    const fetchCommunityItemsQuery = 'SELECT * FROM products WHERE "addtocommunity" = 1';
+    const { rows } = await pool.query(fetchCommunityItemsQuery);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error('Error fetching community items:', error);
+    res.status(500).json({ error: 'An error occurred' });
+  }
+});
+
+// Add a new API endpoint for offering an item to the community
+app.post('/api/offer-to-community', async (req, res) => {
+  const { itemId } = req.body;
+
+  // Check if itemId is a valid integer
+  if (!Number.isInteger(itemId) || itemId <= 0) {
+    return res.status(400).json({ error: 'Invalid itemId' });
+  }
+  // Update the item in the database
+  const updateQuery = 'UPDATE products SET addtocommunity = 1 WHERE id = $1';
+
+  try {
+    const result = await pool.query(updateQuery, [itemId]);
+    console.log('Item offered to the community successfully');
+    res.status(200).json({ message: 'Item offered to the community successfully' });
+  } catch (error) {
+    console.error('Error updating item:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
