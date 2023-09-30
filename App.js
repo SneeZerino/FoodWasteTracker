@@ -129,9 +129,9 @@ const handleLogin = async () => {
         }
       } else {
         // Authentication failed
-        console.error('Authentication failed:', response.status);
+        //console.error('Authentication failed:', response.status);
         setLoginError('Invalid username or password');
-        console.log('Login error:', loginError);
+        //console.log('Login error:', loginError);
       }
     } catch (error) {
       console.error('Error during authentication:', error);
@@ -175,28 +175,22 @@ const handleOfferToCommunity = async (itemId) => {
     }
   };
   
-  
-
-  useEffect(() => {
-    // Fetch the user's items when the component mounts or when the user logs in
-    if (loggedIn) {
-      fetchUserItems();
-    }
-  }, [loggedIn]);
-
   const fetchUserItems = async () => {
     try {
       const response = await fetch(`${serverUrl}/api/user-items?userId=${userId}`);
       if (response.ok) {
         const data = await response.json();
         setUserItems(data);
-      } else {
-        console.error('Failed to fetch user items:', response.status);
       }
     } catch (error) {
       console.error('Error fetching user items:', error);
     }
   };
+  useEffect(() => {
+    if (loggedIn) {
+      fetchUserItems();
+    }
+  }, [loggedIn]);
   
   // Call the function to fetch user items when isStorageVisible is true
   useEffect(() => {
