@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "@expo/webpack-config": "^19.0.0",
+    "@react-navigation/native": "^6.1.8",
+    "axios": "^1.5.1",
     "expo": "~49.0.10",
     "expo-barcode-scanner": "~12.5.3",
     "expo-camera": "~13.4.4",

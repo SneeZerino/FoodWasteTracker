@@ -1,3 +1,4 @@
+const cors = require('cors');
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Pool, Client } = require('pg');
@@ -21,6 +22,15 @@ pool.connect((err) => {
   }
   console.log('Connected to PostgreSQL database');
 });
+
+// Use the cors middleware with appropriate options
+//app.use(cors({
+//  origin: 'http://localhost:19006',
+//  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+//  credentials: true, // If you need to allow credentials (e.g., cookies)
+//}));
+
+app.use(cors({ origin: '*' })); //Absolutly Unsafe, use only for Dev Enviroment ;)
 
 // Middleware for parsing JSON data
 app.use(bodyParser.json());
@@ -153,6 +163,58 @@ app.post('/api/offer-to-community', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Add a new API endpoint for Check if the user has residential data
+app.get('/api/check-residential-data', async (req, res) => {
+      const { userId } = req.query;
+      console.log('Received userId:', userId);
+
+      if (!userId) {
+        return res.status(400).json({ error: 'Invalid input data' });
+     }
+
+  try {
+     // Check if the user exists and has residential data in a single query
+     const checkResidentialDataQuery = `
+       SELECT EXISTS (
+         SELECT 1 FROM residential_data WHERE user_id = $1
+       ) AS has_residential_data
+     `;
+     const result = await pool.query(checkResidentialDataQuery, [userId]);
+ 
+     if (result.rows[0].has_residential_data) {
+       // User has residential data
+       res.status(200).json({ hasResidentialData: true });
+     } else {
+       // User does not have residential data
+       res.status(200).json({ hasResidentialData: false });
+     }
+  } catch (error) {
+     console.error('Error checking residential data:', error);
+     res.status(500).json({ error: 'An error occurred' });
+  }
+ });
+ 
+
+// Add a new API endpoint for Insert residential data for the user
+  app.post('/api/insert-residential-data', async (req, res) => {
+    const { userId, postalCode, address, buildingNumber, phoneNumber } = req.body;
+  
+    if (userId == null || !postalCode || !address || !buildingNumber || !phoneNumber) {
+      return res.status(400).json({ error: 'Invalid input data' });
+    }
+  
+    try {
+      const insertResidentialDataQuery = `INSERT INTO residential_data (user_id, postal_code, address, building_number, phone_number) VALUES ($1, $2, $3, $4, $5)`;
+      
+      await pool.query(insertResidentialDataQuery, [userId, postalCode, address, buildingNumber, phoneNumber]);
+  
+      res.status(201).json({ message: 'Residential data inserted successfully' });
+    } catch (error) {
+      console.error('Error inserting residential data:', error);
+      res.status(500).json({ error: 'An error occurred' });
+    }
+  });
 
 // Start the server
 app.listen(port, () => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import App from './App.1';
+import App from './App';
 
 describe('Integration Tests', () => {
   it('renders login screen by default', () => {

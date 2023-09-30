@@ -3,7 +3,6 @@ import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button,
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import CommunityItemsScreen from './CommunityItemsScreen';
 
-
 const App = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
