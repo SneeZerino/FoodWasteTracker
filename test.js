@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, getByPlaceholderText, waitFor } from '@testing-library/react-native';
 import App from './App';
+import CommunityItemsScreen from './CommunityItemsScreen';
 
 describe('Integration Tests', () => {
   it('renders login screen by default', () => {
@@ -53,8 +54,8 @@ describe('Integration Tests', () => {
     }, 1000); // Adjust the delay as needed
   });
 
-  it('logs out when the "Logout" button is pressed', () => {
-    const { getByText, getByTestId } = render(<App />);
+  it('logs out when the "Logout" button is pressed', async () => {
+    const { getByText, getByTestId, getByPlaceholderText } = render(<App />);
     const usernameInput = getByPlaceholderText('Username');
     const passwordInput = getByPlaceholderText('Password');
     
@@ -64,24 +65,82 @@ describe('Integration Tests', () => {
     const loginButton = getByTestId('userloginbutton');
     fireEvent.press(loginButton);
   
-    // Use setTimeout to wait for the component to re-render after login (adjust the delay as needed)
-    setTimeout(() => {
-      // Check if the welcome text is displayed after login
-      const welcomeText = getByText('Welcome, Test!');
-      expect(welcomeText).toBeTruthy();
-      
-      // Locate the logout button and trigger a click event
-      const logoutButton = getByText('Logout');
-      fireEvent.press(logoutButton);
-  
-      // Use setTimeout to wait for the component to re-render after logout (adjust the delay as needed)
-      setTimeout(() => {
-        // Check if the login screen is displayed after logout
-        const loginText = getByText('Login to the Fridge');
-        expect(loginText).toBeTruthy();
-      }, 1500); // Adjust the delay as needed for logout
-    }, 1500); // Adjust the delay as needed for login
+      // Wait for the login process to complete
+  await waitFor(() => {
+    // Check if the welcome text is displayed after login
+    const welcomeText = getByText('Welcome, Test!');
+    expect(welcomeText).toBeTruthy();
   });
+
+  // Locate and click the logout button
+  const logoutButton = getByText('Logout');
+  fireEvent.press(logoutButton);
+
+  // Wait for the logout process to complete
+  await waitFor(() => {
+    // Check if the login screen is displayed after logout
+    const loginText = getByText('Login to the Fridge');
+    expect(loginText).toBeTruthy();
+  });
+});
+
+it('adds a product when the "Add Product" button is pressed', async () => {
+  const { getByText, getByPlaceholderText, getByTestId } = render(<App />);
+  const usernameInput = getByPlaceholderText('Username');
+  const passwordInput = getByPlaceholderText('Password');
+  // Provide valid login credentials
+  fireEvent.changeText(usernameInput, 'Test');
+  fireEvent.changeText(passwordInput, 'test');
+  const loginButton = getByTestId('userloginbutton');
+  fireEvent.press(loginButton);
+  
+  await waitFor(() => {
+    // Check if the welcome text is displayed after login
+    const welcomeText = getByText('Welcome, Test!');
+    expect(welcomeText).toBeTruthy();
+  });
+
+  // Locate and click the "Add Groceries" button
+  const addGroceriesButton = getByText('Add Groceries');
+  fireEvent.press(addGroceriesButton);
+
+  // Wait for the Add Groceries modal to be visible
+  await waitFor(() => {
+    const addModal = getByText('Add Groceries');
+    expect(addModal).toBeTruthy();
+  });
+
+  // Locate and click the "Add Manually" button
+  const addManuallyButton = getByText('Add Manually');
+  fireEvent.press(addManuallyButton);
+
+  // Wait for the Add Product Manually modal to be visible
+  await waitFor(() => {
+    const addProductModal = getByText('Add Product Manually');
+    expect(addProductModal).toBeTruthy();
+  });
+
+  // Locate and fill in the product name and expiry date inputs
+  const productNameInput = getByPlaceholderText('Product Name');
+  const expiryDateInput = getByPlaceholderText('Expiry Date (YYYY-MM-DD)');
+  fireEvent.changeText(productNameInput, 'Test Product');
+  fireEvent.changeText(expiryDateInput, '2023-12-31');
+
+  // Locate and click the "Add Product" button
+  const addProductButton = getByText('Add Product');
+  fireEvent.press(addProductButton);
+
+  // Locate and click the logout button
+  const logoutButton = getByText('Logout');
+  fireEvent.press(logoutButton);
+
+  // Wait for the logout process to complete
+  await waitFor(() => {
+    // Check if the login screen is displayed after logout
+    const loginText = getByText('Login to the Fridge');
+    expect(loginText).toBeTruthy();
+  });
+});
 
   // Add more test cases as needed
   // ...

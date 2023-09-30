@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform, FlatList} from 'react-native';
-import { BarCodeScanner } from 'expo-barcode-scanner';
 import CommunityItemsScreen from './CommunityItemsScreen';
 
 const App = () => {
@@ -8,10 +7,6 @@ const App = () => {
   const [password, setPassword] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
   const [isAddModalVisible, setAddModalVisible] = useState(false);
-  const [isManualAddModalVisible, setManualAddModalVisible] = useState(false);
-  const [isScannerVisible, setScannerVisible] = useState(false);
-  const [hasPermission, setHasPermission] = useState(null);
-  const [scanned, setScanned] = useState(false);
   const [productName, setProductName] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false); // Use a single state variable for modal visibility
@@ -40,20 +35,6 @@ const App = () => {
   }, 
   []);
 
-  const handleBarCodeScanned = ({ type, data }) => {
-    setScanned(true);
-    // Handle the scanned barcode data (e.g., add the item to the grocery list)
-    // logic comes later here
-    console.log(`Bar code with type ${type} and data ${data} has been scanned!`);
-    // Close the scanner
-    setScannerVisible(false);
-  };
-
-  const openScanner = async () => {
-    setScanned(false);
-    setScannerVisible(true);
-  };
-
 const serverUrl = 'http://sneeze.internet-box.ch:3006';
 
 const handleManualAdd = async () => {
@@ -74,7 +55,7 @@ const handleManualAdd = async () => {
   
       if (response.ok) {
         // Product added successfully
-        console.log('Product added successfully');
+        //console.log('Product added successfully');
         setProductName("");
         setExpiryDate("");
         setaddtocommunity(0);
@@ -162,6 +143,7 @@ const handleLogout = () => {
     setUsername('');
     setPassword('');
     setLoggedIn(false);
+    setCommunityVisible(false);
     // Navigate the user back to the login screen
   };
 
@@ -286,7 +268,7 @@ const handleOfferToCommunity = async (itemId) => {
           >
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
               <View style={{ backgroundColor: 'white', padding: 20 }}>
-                <Text style={{ fontSize: 18, marginBottom: 10 }}>Add Groceries</Text>
+                <Text style={{ fontSize: 18, marginBottom: 10 }}>Add new Groceries</Text>
                 <Button
                   title="Add Manually"
                   onPress={() => {
@@ -296,41 +278,12 @@ const handleOfferToCommunity = async (itemId) => {
                 />
                 <Button
                   title="Scan Barcode"
-                  onPress={openScanner}
                 />
                 <Button
                   title="Cancel"
                   onPress={() => setAddModalVisible(false)}
                 />
               </View>
-            </View>
-          </Modal>
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={isScannerVisible}
-            onRequestClose={() => setScannerVisible(false)}
-          >
-             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              {Platform.OS === 'ios' ? (
-                <BarCodeScanner
-                  onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-                  style={{ width: '100%', height: '100%' }}
-                />
-              ) : (
-                hasPermission ? (
-                  <BarCodeScanner
-                    onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                ) : (
-                  <Text>No access to camera</Text>
-                )
-              )}
-              <Button
-                title="Close Scanner"
-                onPress={() => setScannerVisible(false)}
-              />
             </View>
           </Modal>
           <Modal
