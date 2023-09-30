@@ -28,3 +28,6 @@ jobs:
         
       - name: Build and package Web application
         run: npx expo export:web
+
+      - name: Integration Tests
+        run: npm test
