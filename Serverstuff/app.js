@@ -80,7 +80,7 @@ app.post('/api/login', async (req, res) => {
 
 // API endpoint for user registration
 app.post('/api/register', (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, firstname, lastname, email } = req.body;
 
   // Check if the username already exists in the database
   const checkUserQuery = 'SELECT * FROM users WHERE username = $1';
@@ -96,8 +96,8 @@ app.post('/api/register', (req, res) => {
       res.status(400).json({ error: 'Username already taken' });
     } else {
       // Insert the new user into the database
-      const insertUserQuery = 'INSERT INTO users (username, password) VALUES ($1, $2)';
-      pool.query(insertUserQuery, [username, password], (err) => {
+      const insertUserQuery = 'INSERT INTO users (username, password, firstname, lastname, email) VALUES ($1, $2, $3, $4, $5)';
+      pool.query(insertUserQuery, [username, password, firstname, lastname, email], (err) => {
         if (err) {
           console.error('Error registering user:', err);
           res.status(500).json({ error: 'An error occurred' });
@@ -120,7 +120,7 @@ app.get('/api/user-items', async (req, res) => {
 
   try {
     // Query the database to fetch user items
-    const fetchUserItemsQuery = 'SELECT * FROM products WHERE user_id = $1';
+    const fetchUserItemsQuery = 'SELECT * FROM products WHERE user_id = $1 ORDER BY expiry_date';
     const { rows } = await pool.query(fetchUserItemsQuery, [userId]);
     res.status(200).json(rows);
   } catch (error) {
@@ -128,7 +128,6 @@ app.get('/api/user-items', async (req, res) => {
     res.status(500).json({ error: 'An error occurred' });
   }
 });
-
 
 // Add a new API endpoint for fetching community items
 app.get('/api/community-items', async (req, res) => {
@@ -211,11 +210,80 @@ app.get('/api/check-residential-data', async (req, res) => {
   
       res.status(201).json({ message: 'Residential data inserted successfully' });
     } catch (error) {
-      console.error('Error inserting residential data:', error);
       res.status(500).json({ error: 'An error occurred' });
     }
   });
 
+  // Add a new API endpoint for deleting Items from the Storage
+  app.delete('/api/remove-item/:itemId', async (req, res) => {
+    const { itemId } = req.params;
+  
+    // Check if itemId is a valid integer
+    if (!itemId || isNaN(parseInt(itemId))) {
+      return res.status(400).json({ error: 'Invalid itemId' });
+    }
+  
+    try {
+      // Remove the item from the database
+      const removeItemQuery = 'DELETE FROM products WHERE id = $1';
+      await pool.query(removeItemQuery, [itemId]);
+      
+      // Respond with a success message
+      res.status(200).json({ message: 'Item removed from storage' });
+    } catch (error) {
+      console.error('Error removing item from storage:', error);
+      res.status(500).json({ error: 'An error occurred' });
+    }
+  });
+
+  // Add a new API endpoint for retrieving User Informations
+  app.get('/api/user-info/:userId', async (req, res) => {
+    const { userId } = req.params;
+  
+    // Check if userId is a valid integer
+    if (!userId || isNaN(parseInt(userId))) {
+      return res.status(400).json({ success: false, error: 'Invalid userId' });
+    }
+  
+    try {
+      // Query the database to fetch user information based on userId
+      const fetchUserInfoQuery = 'SELECT firstname, lastname FROM users WHERE id = $1';
+      const { rows } = await pool.query(fetchUserInfoQuery, [userId]);
+  
+      if (rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+  
+      const user = rows[0];
+      res.status(200).json({ success: true, user });
+    } catch (error) {
+      console.error('Error fetching user information:', error);
+      res.status(500).json({ success: false, error: 'An error occurred' });
+    }
+  });
+
+  // Add a new API endpoint for changing Item to new User
+  app.put('/api/update-item/:itemId', async (req, res) => {
+    const { itemId } = req.params;
+    const { addtocommunity, ownerUserId } = req.body;
+  
+    // Check if itemId is a valid integer
+    if (!itemId || isNaN(parseInt(itemId))) {
+      return res.status(400).json({ success: false, error: 'Invalid itemId' });
+    }
+  
+    try {
+      // Update the item in the database based on itemId
+      const updateItemQuery = 'UPDATE products SET addtocommunity = 0, user_id = $2 WHERE id = $3';
+      await pool.query(updateItemQuery, [ownerUserId, itemId]);
+  
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('Error updating the item:', error);
+      res.status(500).json({ success: false, error: 'An error occurred' });
+    }
+  });
+  
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

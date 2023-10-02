@@ -18,15 +18,23 @@ const ResidentialDataForm = ({ isVisible, userId, onSubmit, onClose }) => {
     // Submit the data to the parent component
     try {
       const response = await onSubmit({ userId, postalCode, address, buildingNumber, phoneNumber });
-      if (response && response.ok) {
-        // Data inserted successfully
-        console.log('Residential data inserted successfully');
-      } else {
-        console.error('Failed to insert residential data:', response.status);
+  
+      if (response) {
+        if (response.ok) {
+          // Data inserted successfully
+          console.log('Residential data inserted successfully');
+        } else {
+          // Handle other types of errors based on the response status
+          if (response.status) {
+            console.error('Failed to insert residential data:', response.status);
+          } else {
+            console.error('Failed to insert residential data: Unexpected error');
+          }
+        }
+      } 
+      } catch (error) {
+        console.error('Error inserting residential data:', error);
       }
-    } catch (error) {
-      console.error('Error inserting residential data:', error);
-    }
 
     // Clear the form fields
     setPostalCode('');
@@ -53,24 +61,28 @@ const ResidentialDataForm = ({ isVisible, userId, onSubmit, onClose }) => {
           value={postalCode}
           onChangeText={setPostalCode}
           style={styles.input}
+          placeholderTextColor="black"
         />
         <TextInput
           placeholder="Address"
           value={address}
           onChangeText={setAddress}
           style={styles.input}
+          placeholderTextColor="black"
         />
         <TextInput
           placeholder="Building Number"
           value={buildingNumber}
           onChangeText={setBuildingNumber}
           style={styles.input}
+          placeholderTextColor="black"
         />
         <TextInput
           placeholder="Phone Number"
           value={phoneNumber}
           onChangeText={setPhoneNumber}
           style={styles.input}
+          placeholderTextColor="black"
         />
         <Button title="Submit" onPress={handleSubmit} />
         <Button title="Back" onPress={handleBackButtonPress} />
@@ -84,14 +96,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f0f0f0',
   },
   input: {
     borderWidth: 1,
-    borderColor: 'gray',
-    borderRadius: 5,
+    borderColor: '#ccc', // Border color
+    borderRadius: 8, // Rounded corners
     width: '80%',
     marginVertical: 10,
-    padding: 10,
+    padding: 14, // Increased padding
+    fontSize: 16, // Font size
+    backgroundColor: '#fff', // Input background color
   },
 });
 

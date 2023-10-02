@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform, FlatList} from 'react-native';
+import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform, FlatList, StyleSheet} from 'react-native';
 import CommunityItemsScreen from './CommunityItemsScreen';
 
 const App = () => {
@@ -14,16 +14,17 @@ const App = () => {
 
   const [registrationUsername, setRegistrationUsername] = useState('');
   const [registrationPassword, setRegistrationPassword] = useState('');
+  const [registrationFirstname, setRegistrationFirstname] = useState('');
+  const [registrationLastname, setRegistrationLastname] = useState('');
+  const [registrationEmail, setRegistrationEmail] = useState('');
   const [registrationError, setRegistrationError] = useState(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [loginError, setLoginError] = useState(null);
   const [userId, setUserId] = useState(null);
-  const [userItems, setUserItems] = useState([]); // State variable to store user's items
+  const [userItems, setUserItems] = useState([]);
   const [isStorageVisible, setStorageVisible] = useState(false);
   const [addtocommunity, setaddtocommunity] = useState(0);
   const [communityVisible, setCommunityVisible] = useState(false);
-
-
 
   useEffect(() => {
     (async () => {
@@ -77,6 +78,9 @@ const handleRegistration = async () => {
       const registrationData = {
         username: registrationUsername,
         password: registrationPassword,
+        firstname: registrationFirstname, 
+        lastname: registrationLastname,   
+        email: registrationEmail,         
       };
 
       const response = await fetch(`${serverUrl}/api/register`, {
@@ -93,6 +97,9 @@ const handleRegistration = async () => {
         // Close the registration modal
         setRegistrationUsername('');
         setRegistrationPassword('');
+        setRegistrationFirstname('');
+        setRegistrationLastname(''); 
+        setRegistrationEmail(''); 
         setRegistrationError(null);
       } else {
         // Registration failed, handle errors or show an error message
@@ -192,6 +199,24 @@ const handleOfferToCommunity = async (itemId) => {
     }
   }, [loggedIn]);
   
+  const handleRemoveFromStorage = async (itemId) => {
+    try {
+      // Make a DELETE request to your API to remove the item from the database
+      const response = await fetch(`${serverUrl}/api/remove-item/${itemId}`, {
+        method: 'DELETE',
+      });
+  
+      if (response.ok) {
+        // If the deletion was successful, update the userItems state to reflect the change
+        setUserItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+      } else {
+        console.error('Failed to remove item from storage:', response.status);
+      }
+    } catch (error) {
+      console.error('Error removing item from storage:', error);
+    }
+  };
+
   // Call the function to fetch user items when isStorageVisible is true
   useEffect(() => {
     // Fetch the user's items when isStorageVisible is true
@@ -225,35 +250,47 @@ const handleOfferToCommunity = async (itemId) => {
           }}
         />
         {isStorageVisible && (
-          <FlatList
-            data={userItems}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
-                <Text>Name: {item.name}</Text>
-                <Text>Expiry Date: {item.expiryDate}</Text>
-                {loggedIn && item.addtocommunity === 0 && (
-                  <TouchableOpacity
-                    onPress={() => handleOfferToCommunity(item.id)}
-                    style={{
-                      backgroundColor: 'purple',
-                      padding: 10,
-                      margin: 10,
-                      borderRadius: 5,
-                    }}
-                  >
-                    <Text style={{ color: 'white' }}>Offer to Community</Text>
-                  </TouchableOpacity>
-                )}
-                {loggedIn && item.addtocommunity === 1 && (
-                  <Text style={{ color: 'gray' }}>Currently offered to the Community</Text>
-                )}
-              </View>
-            )}
-          />
+            <FlatList
+              data={userItems}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => {
+                // Parse the ISO date string into a JavaScript Date object
+                const expiryDate = new Date(item.expiry_date);
 
-        )}
-
+                // Format the date as desired (e.g., "Day Month Year")
+                const formattedExpiryDate = expiryDate.toLocaleDateString('en-US', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                });
+                return (
+                  <View style={styles.itemContainer}>
+                    <Text style={styles.itemText}>Name: {item.name}</Text>
+                    <Text style={styles.itemText}>Expiry Date: {formattedExpiryDate}</Text>
+                    {loggedIn && item.addtocommunity === 0 && (
+                      <TouchableOpacity
+                        onPress={() => handleOfferToCommunity(item.id)}
+                        style={styles.offerButton}
+                      >
+                        <Text style={styles.offerButtonText}>Offer to Community</Text>
+                      </TouchableOpacity>
+                    )}
+                    {loggedIn && item.addtocommunity === 1 && (
+                      <Text style={styles.communityText}>Currently offered to the Community</Text>
+                    )}
+                    {loggedIn && (
+                    <TouchableOpacity
+                      onPress={() => handleRemoveFromStorage(item.id)}
+                      style={styles.removeButton} //
+                    >
+                      <Text style={styles.removeButtonText}>Remove from Storage</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                );
+              }}
+            />
+          )}
           <Modal
             animationType="slide"
             transparent={true}
@@ -293,13 +330,15 @@ const handleOfferToCommunity = async (itemId) => {
               placeholder="Product Name"
               value={productName}
               onChangeText={(text) => setProductName(text)}
-              style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+              style={{ borderWidth: 1, width: 250, margin: 10, padding: 5 }}
+              placeholderTextColor="black"
             />
             <TextInput
               placeholder="Expiry Date (YYYY-MM-DD)"
               value={expiryDate}
               onChangeText={(text) => setExpiryDate(text)}
-              style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+              style={{ borderWidth: 1, width: 250, margin: 10, padding: 5 }}
+              placeholderTextColor="black"
             />
             <Button
               title="Add Product"
@@ -323,10 +362,32 @@ const handleOfferToCommunity = async (itemId) => {
           ) : null}
           <Text>Register a new account:</Text>
           <TextInput
+            placeholder="First Name"
+            value={registrationFirstname}
+            onChangeText={(text) => setRegistrationFirstname(text)}
+            style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+            placeholderTextColor="black"
+          />
+          <TextInput
+            placeholder="Last Name"
+            value={registrationLastname}
+            onChangeText={(text) => setRegistrationLastname(text)}
+            style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+            placeholderTextColor="black"
+          />
+          <TextInput
+            placeholder="Email"
+            value={registrationEmail}
+            onChangeText={(text) => setRegistrationEmail(text)}
+            style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+            placeholderTextColor="black"
+          />
+          <TextInput
             placeholder="New Username"
             value={registrationUsername}
             onChangeText={(text) => setRegistrationUsername(text)}
             style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+            placeholderTextColor="black"
           />
           <TextInput
             placeholder="New Password"
@@ -334,6 +395,7 @@ const handleOfferToCommunity = async (itemId) => {
             onChangeText={(text) => setRegistrationPassword(text)}
             secureTextEntry
             style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+            placeholderTextColor="black"
           />
           <TouchableOpacity onPress={handleRegistration} style={{ backgroundColor: 'green', padding: 10 }}>
             <Text style={{ color: 'white' }}>Register</Text>
@@ -347,7 +409,6 @@ const handleOfferToCommunity = async (itemId) => {
           {registrationError && <Text style={{ color: 'red' }}>{registrationError}</Text>}
         </View>
       );
-
     } else {
       return (
         <View style={{ alignItems: 'center' }}>
@@ -357,6 +418,7 @@ const handleOfferToCommunity = async (itemId) => {
             value={username}
             onChangeText={(text) => setUsername(text)}
             style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+            placeholderTextColor="black"
           />
           <TextInput
             placeholder="Password"
@@ -364,6 +426,7 @@ const handleOfferToCommunity = async (itemId) => {
             onChangeText={(text) => setPassword(text)}
             secureTextEntry
             style={{ borderWidth: 1, width: 200, margin: 10, padding: 5 }}
+            placeholderTextColor="black"
           />
           <TouchableOpacity onPress={handleLogin} style={{ backgroundColor: 'blue', padding: 10 }}>
             <Text style={{ color: 'white' }}>Login</Text>
@@ -422,6 +485,7 @@ const handleOfferToCommunity = async (itemId) => {
             backgroundColor: 'green',
             padding: 10,
             marginTop: 10,
+            opacity: 0,
           }}
           testID="createUserButton" // Add testID for registration button
         >
@@ -434,6 +498,7 @@ const handleOfferToCommunity = async (itemId) => {
           style={{
             backgroundColor: 'blue',
             padding: 10,
+            opacity: 0,
           }}
           testID="userloginbutton" // Add testID for login button
         >
@@ -443,5 +508,44 @@ const handleOfferToCommunity = async (itemId) => {
     </ImageBackground>
   );
 };
+
+const styles = StyleSheet.create({
+  itemContainer: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    backgroundColor: 'white',
+    marginBottom: 10,
+    borderRadius: 10,
+    opacity: 0.9,
+  },
+  itemText: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  offerButton: {
+    backgroundColor: 'purple',
+    padding: 10,
+    margin: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  offerButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  communityText: {
+    color: 'gray',
+    fontSize: 16,
+    marginTop: 5,
+  },
+  removeButton: {
+    backgroundColor: 'red',
+    padding: 10,
+    margin: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+});
 
 export default App;
