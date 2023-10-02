@@ -284,6 +284,85 @@ app.get('/api/check-residential-data', async (req, res) => {
     }
   });
   
+  app.post('/api/shopping-list', async (req, res) => {
+    try {
+      const { user_id, name, quantity } = req.body;
+  
+      if (!user_id || isNaN(user_id)) {
+        return res.status(400).json({ error: 'Invalid user_id' });
+      }
+  
+      const insertQuery = 'INSERT INTO shopping_list (user_id, name, quantity) VALUES ($1, $2, $3) RETURNING *';
+      const values = [user_id, name, quantity];
+  
+      const { rows } = await pool.query(insertQuery, values);
+  
+      res.status(201).json(rows[0]);
+    } catch (error) {
+      console.error('Error creating shopping list item:', error);
+      res.status(500).json({ error: 'An error occurred' });
+    }
+  });
+  
+  app.get('/api/shopping-list/:user_id', async (req, res) => {
+    try {
+      const { user_id } = req.params;
+  
+      if (!user_id || isNaN(user_id)) {
+        return res.status(400).json({ error: 'Invalid user_id' });
+      }
+  
+      const selectQuery = 'SELECT * FROM shopping_list WHERE user_id = $1';
+      const { rows } = await pool.query(selectQuery, [user_id]);
+  
+      res.status(200).json(rows);
+    } catch (error) {
+      console.error('Error retrieving shopping list items:', error);
+      res.status(500).json({ error: 'An error occurred' });
+    }
+  });
+  
+  app.put('/api/shopping-list/:item_id', async (req, res) => {
+    try {
+      const { item_id } = req.params;
+      const { quantity } = req.body;
+  
+      if (!item_id || isNaN(item_id) || !quantity || isNaN(quantity)) {
+        return res.status(400).json({ error: 'Invalid item_id or quantity' });
+      }
+  
+      const updateQuery = 'UPDATE shopping_list SET quantity = $1 WHERE id = $2 RETURNING *';
+      const values = [quantity, item_id];
+  
+      const { rows } = await pool.query(updateQuery, values);
+  
+      res.status(200).json(rows[0]);
+    } catch (error) {
+      console.error('Error updating shopping list item:', error);
+      res.status(500).json({ error: 'An error occurred' });
+    }
+  });
+  
+  app.delete('/api/shopping-list/:item_id', async (req, res) => {
+    try {
+      const { item_id } = req.params;
+  
+      if (!item_id || isNaN(item_id)) {
+        return res.status(400).json({ error: 'Invalid item_id' });
+      }
+  
+      const deleteQuery = 'DELETE FROM shopping_list WHERE id = $1 RETURNING *';
+      const values = [item_id];
+  
+      const { rows } = await pool.query(deleteQuery, values);
+  
+      res.status(200).json(rows[0]);
+    } catch (error) {
+      console.error('Error deleting shopping list item:', error);
+      res.status(500).json({ error: 'An error occurred' });
+    }
+  });
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

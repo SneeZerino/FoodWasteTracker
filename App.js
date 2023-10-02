@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform, FlatList, StyleSheet} from 'react-native';
 import CommunityItemsScreen from './CommunityItemsScreen';
+import ShoppingList from './ShoppingList';
 
 const App = () => {
   const [username, setUsername] = useState('');
@@ -25,6 +26,8 @@ const App = () => {
   const [isStorageVisible, setStorageVisible] = useState(false);
   const [addtocommunity, setaddtocommunity] = useState(0);
   const [communityVisible, setCommunityVisible] = useState(false);
+  const [isShoppingListVisible, setShoppingListVisible] = useState(false);
+
 
   useEffect(() => {
     (async () => {
@@ -217,6 +220,10 @@ const handleOfferToCommunity = async (itemId) => {
     }
   };
 
+  const toggleShoppingListModal = () => {
+    setShoppingListVisible(!isShoppingListVisible);
+  };
+
   // Call the function to fetch user items when isStorageVisible is true
   useEffect(() => {
     // Fetch the user's items when isStorageVisible is true
@@ -227,132 +234,132 @@ const handleOfferToCommunity = async (itemId) => {
   
   const renderContent = () => {
     if (loggedIn) {
-      return (
-        <View style={{ alignItems: 'center' }}>
-          <Text>Welcome, {username}!</Text>
-          
-          <Button
-            title="Community"
-            onPress={() => setCommunityVisible(true)}
-          />
-          <Button
-            title="Add Groceries"
-            onPress={() => setAddModalVisible(true)}
-          />
-           <Button
-          title="Storage"
-          onPress={() => {
-            setStorageVisible(!isStorageVisible);
-            // Fetch user items when Storage button is pressed
-            if (!isStorageVisible) {
-              fetchUserItems();
-            }
-          }}
-        />
-        {isStorageVisible && (
-            <FlatList
-              data={userItems}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => {
-                // Parse the ISO date string into a JavaScript Date object
-                const expiryDate = new Date(item.expiry_date);
-
-                // Format the date as desired (e.g., "Day Month Year")
-                const formattedExpiryDate = expiryDate.toLocaleDateString('en-US', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                });
-                return (
-                  <View style={styles.itemContainer}>
-                    <Text style={styles.itemText}>Name: {item.name}</Text>
-                    <Text style={styles.itemText}>Expiry Date: {formattedExpiryDate}</Text>
-                    {loggedIn && item.addtocommunity === 0 && (
-                      <TouchableOpacity
-                        onPress={() => handleOfferToCommunity(item.id)}
-                        style={styles.offerButton}
-                      >
-                        <Text style={styles.offerButtonText}>Offer to Community</Text>
-                      </TouchableOpacity>
-                    )}
-                    {loggedIn && item.addtocommunity === 1 && (
-                      <Text style={styles.communityText}>Currently offered to the Community</Text>
-                    )}
-                    {loggedIn && (
-                    <TouchableOpacity
-                      onPress={() => handleRemoveFromStorage(item.id)}
-                      style={styles.removeButton} //
-                    >
-                      <Text style={styles.removeButtonText}>Remove from Storage</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-                );
+      if (isShoppingListVisible) {
+        // Render the ShoppingList component
+        return (
+          <ShoppingList userId={userId} />
+        );
+      } else {
+        return (
+          <View style={{ alignItems: 'center' }}>
+            <Text>Welcome, {username}!</Text>
+            
+            <Button title="Community" onPress={() => setCommunityVisible(true)}/>
+            <Button title="Add Groceries" onPress={() => setAddModalVisible(true)}/>
+            <Button title="Shopping List" onPress={() => setShoppingListVisible(true)}/>
+            <Modal visible={isShoppingListVisible} animationType="slide">
+            <ShoppingList userId={userId} closeShoppingList={() => setShoppingListVisible(false)} /></Modal>
+            <Button title="Storage" onPress={() => { setStorageVisible(!isStorageVisible);
+                if (!isStorageVisible) {
+                  fetchUserItems();
+                }
               }}
             />
-          )}
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={isAddModalVisible}
-            onRequestClose={() => setAddModalVisible(false)}
-          >
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <View style={{ backgroundColor: 'white', padding: 20 }}>
-                <Text style={{ fontSize: 18, marginBottom: 10 }}>Add new Groceries</Text>
-                <Button
-                  title="Add Manually"
-                  onPress={() => {
-                    setAddModalVisible(false); // Close the Add Groceries modal if it's open
-                    setIsModalVisible(true); // Show the manual add modal
-                  }}
-                />
-                <Button
-                  title="Scan Barcode"
-                />
-                <Button
-                  title="Cancel"
-                  onPress={() => setAddModalVisible(false)}
-                />
+            {isStorageVisible && (
+              <FlatList
+                data={userItems}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => {
+                  // Parse the ISO date string into a JavaScript Date object
+                  const expiryDate = new Date(item.expiry_date);
+  
+                  // Format the date as desired (e.g., "Day Month Year")
+                  const formattedExpiryDate = expiryDate.toLocaleDateString('en-US', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  });
+                  return (
+                    <View style={styles.itemContainer}>
+                      <Text style={styles.itemText}>Name: {item.name}</Text>
+                      <Text style={styles.itemText}>Expiry Date: {formattedExpiryDate}</Text>
+                      {loggedIn && item.addtocommunity === 0 && (
+                        <TouchableOpacity
+                          onPress={() => handleOfferToCommunity(item.id)}
+                          style={styles.offerButton}
+                        >
+                          <Text style={styles.offerButtonText}>Offer to Community</Text>
+                        </TouchableOpacity>
+                      )}
+                      {loggedIn && item.addtocommunity === 1 && (
+                        <Text style={styles.communityText}>Currently offered to the Community</Text>
+                      )}
+                      {loggedIn && (
+                        <TouchableOpacity
+                          onPress={() => handleRemoveFromStorage(item.id)}
+                          style={styles.removeButton}
+                        >
+                          <Text style={styles.removeButtonText}>Remove from Storage</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                }}
+              />
+            )}
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={isAddModalVisible}
+              onRequestClose={() => setAddModalVisible(false)}
+            >
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ backgroundColor: 'white', padding: 20 }}>
+                  <Text style={{ fontSize: 18, marginBottom: 10 }}>Add new Groceries</Text>
+                  <Button
+                    title="Add Manually"
+                    onPress={() => {
+                      setAddModalVisible(false); // Close the Add Groceries modal if it's open
+                      setIsModalVisible(true); // Show the manual add modal
+                    }}
+                  />
+                  <Button
+                    title="Scan Barcode"
+                  />
+                  <Button
+                    title="Cancel"
+                    onPress={() => setAddModalVisible(false)}
+                  />
+                </View>
               </View>
-            </View>
-          </Modal>
-          <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isModalVisible}
-        onRequestClose={() => setIsModalVisible(false)} // Close the modal
-      >
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: 'white', padding: 20 }}>
-            <Text style={{ fontSize: 18, marginBottom: 10 }}>Add Product Manually</Text>
-            <TextInput
-              placeholder="Product Name"
-              value={productName}
-              onChangeText={(text) => setProductName(text)}
-              style={{ borderWidth: 1, width: 250, margin: 10, padding: 5 }}
-              placeholderTextColor="black"
-            />
-            <TextInput
-              placeholder="Expiry Date (YYYY-MM-DD)"
-              value={expiryDate}
-              onChangeText={(text) => setExpiryDate(text)}
-              style={{ borderWidth: 1, width: 250, margin: 10, padding: 5 }}
-              placeholderTextColor="black"
-            />
-            <Button
-              title="Add Product"
-              onPress={handleManualAdd}
-            />
-            <Button
-              title="Cancel"
-              onPress={() => setIsModalVisible(false)} // Close the modal
-            />
+            </Modal>
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={isModalVisible}
+              onRequestClose={() => setIsModalVisible(false)} // Close the modal
+            >
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ backgroundColor: 'white', padding: 20 }}>
+                  <Text style={{ fontSize: 18, marginBottom: 10 }}>Add Product Manually</Text>
+                  <TextInput
+                    placeholder="Product Name"
+                    value={productName}
+                    onChangeText={(text) => setProductName(text)}
+                    style={{ borderWidth: 1, width: 250, margin: 10, padding: 5 }}
+                    placeholderTextColor="black"
+                  />
+                  <TextInput
+                    placeholder="Expiry Date (YYYY-MM-DD)"
+                    value={expiryDate}
+                    onChangeText={(text) => setExpiryDate(text)}
+                    style={{ borderWidth: 1, width: 250, margin: 10, padding: 5 }}
+                    placeholderTextColor="black"
+                  />
+                  <Button
+                    title="Add Product"
+                    onPress={handleManualAdd}
+                  />
+                  <Button
+                    title="Cancel"
+                    onPress={() => setIsModalVisible(false)} // Close the modal
+                  />
+                </View>
+              </View>
+            </Modal>
           </View>
-        </View>
-      </Modal>
-        </View>
-      );
+        );
+      }
     } else if (isRegistrationVisible) {
       // Render the registration form
       return (
@@ -400,12 +407,12 @@ const handleOfferToCommunity = async (itemId) => {
           <TouchableOpacity onPress={handleRegistration} style={{ backgroundColor: 'green', padding: 10 }}>
             <Text style={{ color: 'white' }}>Register</Text>
           </TouchableOpacity>
-    
+  
           {/* "Back to Login" button */}
           <TouchableOpacity onPress={() => { setRegistrationVisible(false); setRegistrationSuccess(false); }} style={{ backgroundColor: 'red', padding: 10, marginTop: 10 }}>
             <Text style={{ color: 'white' }}>Back to Login</Text>
           </TouchableOpacity>
-
+  
           {registrationError && <Text style={{ color: 'red' }}>{registrationError}</Text>}
         </View>
       );
@@ -432,7 +439,7 @@ const handleOfferToCommunity = async (itemId) => {
             <Text style={{ color: 'white' }}>Login</Text>
           </TouchableOpacity>
           {loginError && <Text style={{ color: 'red' }}>{loginError}</Text>}
-    
+  
           {/* "Create User" button */}
           <TouchableOpacity onPress={() => setRegistrationVisible(true)} style={{ backgroundColor: 'green', padding: 10, marginTop: 10 }}>
             <Text style={{ color: 'white' }}>Create User</Text>
@@ -441,6 +448,7 @@ const handleOfferToCommunity = async (itemId) => {
       );
     }
   }
+  
   return (
     <ImageBackground
       source={require('./Pictures/background.jpg')}
