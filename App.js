@@ -3,6 +3,7 @@ import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button,
 import CommunityItemsScreen from './CommunityItemsScreen';
 import ShoppingList from './ShoppingList';
 import {notification, usePushNotifications} from './notifications'
+import {scheduleItemNotifications} from './notifyUser';
 
 const App = () => {
   const [username, setUsername] = useState('');
@@ -188,12 +189,13 @@ const handleOfferToCommunity = async (itemId) => {
     }
   };
   
-  const fetchUserItems = async () => {
-    try {
-      const response = await fetch(`${serverUrl}/api/user-items?userId=${userId}`);
-      if (response.ok) {
-        const data = await response.json();
+const fetchUserItems = async () => {
+  try {
+    const response = await fetch(`${serverUrl}/api/user-items?userId=${userId}`);
+    if (response.ok) {
+      const data = await response.json();
         setUserItems(data);
+        scheduleItemNotifications(data); // Call the notification scheduling function       
       }
     } catch (error) {
       console.error('Error fetching user items:', error);
@@ -226,14 +228,6 @@ const handleOfferToCommunity = async (itemId) => {
   const toggleShoppingListModal = () => {
     setShoppingListVisible(!isShoppingListVisible);
   };
-
-  // Call the function to fetch user items when isStorageVisible is true
-  useEffect(() => {
-    // Fetch the user's items when isStorageVisible is true
-    if (loggedIn && isStorageVisible) {
-      fetchUserItems();
-    }
-  }, [loggedIn, isStorageVisible]);
   
   const renderContent = () => {
     if (loggedIn) {
@@ -258,48 +252,54 @@ const handleOfferToCommunity = async (itemId) => {
                 }
               }}
             />
-            {isStorageVisible && (
-              <FlatList
-                data={userItems}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => {
-                  // Parse the ISO date string into a JavaScript Date object
-                  const expiryDate = new Date(item.expiry_date);
-  
-                  // Format the date as desired (e.g., "Day Month Year")
-                  const formattedExpiryDate = expiryDate.toLocaleDateString('en-US', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  });
-                  return (
-                    <View style={styles.itemContainer}>
-                      <Text style={styles.itemText}>Name: {item.name}</Text>
-                      <Text style={styles.itemText}>Expiry Date: {formattedExpiryDate}</Text>
-                      {loggedIn && item.addtocommunity === 0 && (
-                        <TouchableOpacity
-                          onPress={() => handleOfferToCommunity(item.id)}
-                          style={styles.offerButton}
-                        >
-                          <Text style={styles.offerButtonText}>Offer to Community</Text>
-                        </TouchableOpacity>
-                      )}
-                      {loggedIn && item.addtocommunity === 1 && (
-                        <Text style={styles.communityText}>Currently offered to the Community</Text>
-                      )}
-                      {loggedIn && (
+          {isStorageVisible && (
+            <FlatList
+              data={userItems}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => {
+                // Parse the ISO date string into a JavaScript Date object
+                const expiryDate = new Date(item.expiry_date);
+
+                // Format the date as desired (e.g., "Day Month Year")
+                const formattedExpiryDate = expiryDate.toLocaleDateString('en-US', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                });
+
+                return (
+                  <View style={styles.itemContainer}>
+                    <Text style={styles.itemText}>Name: {item.name}</Text>
+                    <Text style={styles.itemText}>Expiry Date: {formattedExpiryDate}</Text>
+
+                    {loggedIn && item.addtocommunity === 0 && (
+                      <TouchableOpacity
+                        onPress={() => handleOfferToCommunity(item.id)}
+                        style={styles.offerButton}
+                      >
+                        <Text style={styles.offerButtonText}>Offer to Community</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {loggedIn && item.addtocommunity === 1 && (
+                      <Text style={styles.communityText}>Currently offered to the Community</Text>
+                    )}
+
+                    {loggedIn && (
+                      <View style={styles.buttonContainer}>
                         <TouchableOpacity
                           onPress={() => handleRemoveFromStorage(item.id)}
                           style={styles.removeButton}
                         >
                           <Text style={styles.removeButtonText}>Remove from Storage</Text>
                         </TouchableOpacity>
-                      )}
-                    </View>
-                  );
-                }}
-              />
-            )}
+                      </View>
+                    )}
+                  </View>
+                );
+              }}
+            />
+          )}
             <Modal
               animationType="slide"
               transparent={true}
@@ -556,6 +556,10 @@ const styles = StyleSheet.create({
     margin: 10,
     borderRadius: 5,
     alignItems: 'center',
+  },
+  removeButtonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
 
