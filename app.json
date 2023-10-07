@@ -1,11 +1,17 @@
 {
   "expo": {
     "name": "FoodWasteTracker",
-    "slug": "FoodWasteTracker",
+    "slug": "foodwastetracker",
     "version": "1.0.0",
     "assetBundlePatterns": [
       "**/*"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "deab10a9-197a-41ed-9caa-1c6cfb424ce1"
+      }
+    },
+    "owner": "sneeze91"
   },
   "name": "FoodWasteTracker"
 }

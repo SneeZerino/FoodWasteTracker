@@ -30,7 +30,7 @@ const App = () => {
   const [isShoppingListVisible, setShoppingListVisible] = useState(false);
 
 const {expoPushToken} = usePushNotifications();
-console.log("EXPO PUSH TOKEN: ", expoPushToken)
+//console.log("EXPO PUSH TOKEN: ", expoPushToken)
 
   useEffect(() => {
     (async () => {
