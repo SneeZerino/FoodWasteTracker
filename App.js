@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {View, Text, TextInput, TouchableOpacity, ImageBackground, Modal, Button, Platform, FlatList, StyleSheet} from 'react-native';
 import CommunityItemsScreen from './CommunityItemsScreen';
 import ShoppingList from './ShoppingList';
+import {notification, usePushNotifications} from './notifications'
 
 const App = () => {
   const [username, setUsername] = useState('');
@@ -28,6 +29,8 @@ const App = () => {
   const [communityVisible, setCommunityVisible] = useState(false);
   const [isShoppingListVisible, setShoppingListVisible] = useState(false);
 
+const {expoPushToken} = usePushNotifications();
+console.log("EXPO PUSH TOKEN: ", expoPushToken)
 
   useEffect(() => {
     (async () => {
