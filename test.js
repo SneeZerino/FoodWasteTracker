@@ -1,147 +1,83 @@
 import React from 'react';
 import { render, fireEvent, getByPlaceholderText, waitFor } from '@testing-library/react-native';
-import App from './App';
-describe('Integration Tests', () => {
-  it('renders login screen by default',  async () => {
-    const { getByText } = render(<App />);
+import { useRoute } from '@react-navigation/native';
+import LoginScreen from './screens/LoginScreen';
+import ShoppingListScreen from './screens/ShoppingListScreen';
+import mockUseRoute from './mocks/useRoute';
+
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useRoute: () => mockUseRoute,
+}));
+describe('Login Screen Tests', () => {
+  it('renders login screen by default', async () => {
+    const { getByText } = render(<LoginScreen />);
     const loginText = getByText('Login to the Fridge');
     expect(loginText).toBeTruthy();
   });
 
   it('renders registration screen when "Create User" button is pressed', async () => {
-    const { getByText, getByPlaceholderText, getByTestId } = render(<App />);
-    const createUserButton = getByTestId('createUserButton');
+    const { getByText, getByPlaceholderText, getByTestId } = render(<LoginScreen />);
+  
+    // Find and press the "Create User" button
+    const createUserButton = getByText('Create User');
     fireEvent.press(createUserButton);
+  
+    // Verify that the registration form is displayed
     const registrationText = getByText('Register a new account:');
     expect(registrationText).toBeTruthy();
+  
+    // Verify the presence of registration form inputs and the registration button
+    const firstNameInput = getByPlaceholderText('First Name');
+    const lastNameInput = getByPlaceholderText('Last Name');
+    const emailInput = getByPlaceholderText('Email');
     const usernameInput = getByPlaceholderText('New Username');
     const passwordInput = getByPlaceholderText('New Password');
-    const registerButton = getByTestId('createUserButton'); // Add a to your registration button
+    const registerButton = getByText('Register'); // Update the test ID to match your registration button
+    expect(firstNameInput).toBeTruthy();
+    expect(lastNameInput).toBeTruthy();
+    expect(emailInput).toBeTruthy();
     expect(usernameInput).toBeTruthy();
     expect(passwordInput).toBeTruthy();
     expect(registerButton).toBeTruthy();
   });
 
-  it('logs in and renders user dashboard when valid login credentials are provided', async () => {
-    const { getByText, getByPlaceholderText, getByTestId } = render(<App />);
-    const usernameInput = getByPlaceholderText('Username');
-    const passwordInput = getByPlaceholderText('Password');
-    // Provide valid login credentials
-    fireEvent.changeText(usernameInput, 'Test');
-    fireEvent.changeText(passwordInput, 'test');
-    const loginButton = getByTestId('userloginbutton');
-    fireEvent.press(loginButton);
-      // Wait for the login process to complete
-      await waitFor(() => {
-        // Check if the welcome text is displayed after login
-        const welcomeText = getByText('Welcome, Test!');
-        expect(welcomeText).toBeTruthy();
-      });
-    });
+  it('displays an error message when registration form is submitted with empty fields', async () => {
+    const { getByText } = render(<LoginScreen />); // Render your LoginScreen component
 
-  it('displays an error message when invalid login credentials are provided', async () => {
-    const { getByPlaceholderText, getByText, getByTestId } = render(<App />);
-    const usernameInput = getByPlaceholderText('Username');
-    const passwordInput = getByPlaceholderText('Password');
-    const loginButton = getByTestId('userloginbutton'); // Add a testID to login button
-    fireEvent.changeText(usernameInput, 'invalid-username');
-    fireEvent.changeText(passwordInput, 'invalid-password');
-    fireEvent.press(loginButton);
-  await waitFor(() => {
-    const errorMessage = getByText('Invalid username or password');
+    // Click the "Create User" button to switch to the registration form
+    const createUserButton = getByText('Create User');
+    fireEvent.press(createUserButton);
+
+    // Find the "Register" button and click it
+    const registerButton = getByText('Register');
+    fireEvent.press(registerButton);
+
+    // Find and assert the error message
+    const errorMessage = getByText('Please fill out all required fields.');
     expect(errorMessage).toBeTruthy();
-      });
-    });
+  });
 
-  it('logs out when the "Logout" button is pressed', async () => {
-    const { getByText, getByTestId, getByPlaceholderText } = render(<App />);
+  it('navigates to the main screen on successful login', async () => {
+    const navigationMock = {
+      navigate: jest.fn(),
+    };
+
+    const { getByText, getByPlaceholderText } = render(<LoginScreen navigation={navigationMock} />);
+
+    // Simulate entering username and password
     const usernameInput = getByPlaceholderText('Username');
-    const passwordInput = getByPlaceholderText('Password');
-    
-    // Provide valid login credentials
     fireEvent.changeText(usernameInput, 'Test');
+    const passwordInput = getByPlaceholderText('Password');
     fireEvent.changeText(passwordInput, 'test');
-    const loginButton = getByTestId('userloginbutton');
+
+    // Find and click the "Login" button
+    const loginButton = getByText('Login');
     fireEvent.press(loginButton);
-  
-      // Wait for the login process to complete
-  await waitFor(() => {
-    // Check if the welcome text is displayed after login
-    const welcomeText = getByText('Welcome, Test!');
-    expect(welcomeText).toBeTruthy();
+
+    await waitFor(() => {
+      // Assert that the navigation function was called with the expected route name and params
+      expect(navigationMock.navigate).toHaveBeenCalledWith('Main', { userId: 3 });
+    });
   });
-
-  // Locate and click the logout button
-  const logoutButton = getByText('Logout');
-  fireEvent.press(logoutButton);
-
-  // Wait for the logout process to complete
-  await waitFor(() => {
-    // Check if the login screen is displayed after logout
-    const loginText = getByText('Login to the Fridge');
-    expect(loginText).toBeTruthy();
   });
-});
-
-it('adds a product when the "Add Product" button is pressed', async () => {
-  const { getByText, getByPlaceholderText, getByTestId } = render(<App />);
-  const usernameInput = getByPlaceholderText('Username');
-  const passwordInput = getByPlaceholderText('Password');
-  // Provide valid login credentials
-  fireEvent.changeText(usernameInput, 'Test');
-  fireEvent.changeText(passwordInput, 'test');
-  const loginButton = getByTestId('userloginbutton');
-  fireEvent.press(loginButton);
-  
-  await waitFor(() => {
-    // Check if the welcome text is displayed after login
-    const welcomeText = getByText('Welcome, Test!');
-    expect(welcomeText).toBeTruthy();
-  });
-
-  // Locate and click the "Add Groceries" button
-  const addGroceriesButton = getByText('Add Groceries');
-  fireEvent.press(addGroceriesButton);
-
-  // Wait for the Add Groceries modal to be visible
-  await waitFor(() => {
-    const addModal = getByText('Add Groceries');
-    expect(addModal).toBeTruthy();
-  });
-
-  // Locate and click the "Add Manually" button
-  const addManuallyButton = getByText('Add Manually');
-  fireEvent.press(addManuallyButton);
-
-  // Wait for the Add Product Manually modal to be visible
-  await waitFor(() => {
-    const addProductModal = getByText('Add Product Manually');
-    expect(addProductModal).toBeTruthy();
-  });
-
-  // Locate and fill in the product name and expiry date inputs
-  const productNameInput = getByPlaceholderText('Product Name');
-  const expiryDateInput = getByPlaceholderText('Expiry Date (YYYY-MM-DD)');
-  fireEvent.changeText(productNameInput, 'Test Product');
-  fireEvent.changeText(expiryDateInput, '2023-12-31');
-
-  // Locate and click the "Add Product" button
-  //const addProductButton = getByText('Add Product');
-  //fireEvent.press(addProductButton);
-
-  // Locate and click the logout button
-  const logoutButton = getByText('Logout');
-  fireEvent.press(logoutButton);
-
-  // Wait for the logout process to complete
-  await waitFor(() => {
-    // Check if the login screen is displayed after logout
-    const loginText = getByText('Login to the Fridge');
-    expect(loginText).toBeTruthy();
-  });
-});
-
-  // Add more test cases as needed
-  // ...
-
-});

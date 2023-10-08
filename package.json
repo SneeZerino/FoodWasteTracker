@@ -19,7 +19,10 @@
     "@firebase/firestore": "^4.2.0",
     "@react-native-community/datetimepicker": "7.2.0",
     "@react-native-firebase/app": "^18.5.0",
+    "@react-navigation/bottom-tabs": "^6.5.9",
     "@react-navigation/native": "^6.1.8",
+    "@react-navigation/native-stack": "^6.9.14",
+    "@react-navigation/stack": "^6.3.18",
     "@types/react": "~18.2.14",
     "axios": "^1.5.1",
     "expo": "~49.0.10",
@@ -41,7 +44,8 @@
     "react-native-modal": "^13.0.1",
     "react-native-push-notification": "^8.1.1",
     "react-native-reanimated": "~3.3.0",
-    "react-native-web": "~0.19.6"
+    "react-native-web": "~0.19.6",
+    "react-router-dom": "^6.16.0"
   },
   "devDependencies": {
     "@babel/core": "^7.23.0",

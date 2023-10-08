@@ -1,30 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import {View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ImageBackground } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 
 const serverUrl = 'http://sneeze.internet-box.ch:3006';
 
-const ShoppingList = ({ userId, closeShoppingList }) => {
+const ShoppingListScreen = () => {
   const [shoppingList, setShoppingList] = useState([]);
   const [newItemName, setNewItemName] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('');
 
+  const route = useRoute();
+  const userId = route.params.userId;
+
   // Fetch shopping list items for the user
   useEffect(() => {
-    const fetchShoppingList = async () => {
-      try {
-        const response = await fetch(`${serverUrl}/api/shopping-list/${userId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setShoppingList(data);
-        } else {
-          console.error('Error fetching shopping list:', response.status);
+    if (userId) { // Check if userId is defined
+      const fetchShoppingList = async () => {
+        try {
+          const response = await fetch(`${serverUrl}/api/shopping-list/${userId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setShoppingList(data);
+          } else {
+            console.error('Error fetching shopping list:', response.status);
+          }
+        } catch (error) {
+          console.error('Error fetching shopping list:', error);
         }
-      } catch (error) {
-        console.error('Error fetching shopping list:', error);
-      }
-    };
+      };
 
-    fetchShoppingList();
+      fetchShoppingList();
+    }
   }, [userId]);
 
   const handleAddItem = async () => {
@@ -96,12 +102,12 @@ const ShoppingList = ({ userId, closeShoppingList }) => {
   };
 
   return (
+    <ImageBackground
+    source={require('../Pictures/background.jpg')}
+    style={styles.backgroundContainer}
+  >
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={styles.header}>Shopping List</Text>
-        <TouchableOpacity onPress={closeShoppingList} style={styles.closeButton}>
-        <Text style={styles.closeButtonText}>Close</Text>
-        </TouchableOpacity>
       </View>
       <View style={styles.inputContainer}>
         <TextInput
@@ -118,10 +124,10 @@ const ShoppingList = ({ userId, closeShoppingList }) => {
           style={[styles.input, styles.quantityInput]}
           placeholderTextColor="#888"
         />
-        <TouchableOpacity onPress={handleAddItem} style={styles.addButton}>
-          <Text style={styles.buttonText}>Add Item</Text>
-        </TouchableOpacity>
       </View>
+      <TouchableOpacity onPress={handleAddItem} style={styles.addButton}>
+        <Text style={styles.buttonText}>Add Item</Text>
+      </TouchableOpacity>
       <FlatList
         data={shoppingList}
         keyExtractor={(item) => item.id.toString()}
@@ -142,39 +148,43 @@ const ShoppingList = ({ userId, closeShoppingList }) => {
         )}
       />
     </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+    resizeMode: 'cover',
+  },
   container: {
     flex: 1,
-    padding: 16,
+    padding: 8,
     backgroundColor: '#fff',
+    paddingHorizontal: 30,
+    paddingVertical: 30,
+    marginBottom: 8,
+    borderRadius: 8,
   },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
   },
-  closeButton: {
-    backgroundColor: 'red',
-    borderRadius: 5,
-    padding: 8,
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 8,
+    paddingHorizontal: 8,
   },
   input: {
     flex: 1,
@@ -204,6 +214,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
   },
   itemName: {
     flex: 1,
@@ -215,4 +229,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ShoppingList;
+export default ShoppingListScreen;
