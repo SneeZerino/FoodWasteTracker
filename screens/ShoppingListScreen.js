@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ImageBackground } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useFocusEffect } from '@react-navigation/native';
 
 const serverUrl = 'http://sneeze.internet-box.ch:3006';
 
@@ -13,25 +13,27 @@ const ShoppingListScreen = () => {
   const userId = route.params.userId;
 
   // Fetch shopping list items for the user
-  useEffect(() => {
-    if (userId) { // Check if userId is defined
-      const fetchShoppingList = async () => {
-        try {
-          const response = await fetch(`${serverUrl}/api/shopping-list/${userId}`);
-          if (response.ok) {
-            const data = await response.json();
-            setShoppingList(data);
-          } else {
-            console.error('Error fetching shopping list:', response.status);
-          }
-        } catch (error) {
-          console.error('Error fetching shopping list:', error);
-        }
-      };
-
-      fetchShoppingList();
+  const fetchShoppingList = async () => {
+    try {
+      const response = await fetch(`${serverUrl}/api/shopping-list/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setShoppingList(data);
+      } else {
+        console.error('Error fetching shopping list:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching shopping list:', error);
     }
-  }, [userId]);
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (userId) {
+        fetchShoppingList();
+      }
+    }, [userId])
+  );
 
   const handleAddItem = async () => {
     try {

@@ -1,15 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Button, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, FlatList, Button, StyleSheet, ImageBackground, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import {scheduleItemNotifications} from '../notifyUser';
+import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
 const serverUrl = 'http://sneeze.internet-box.ch:3006';
 
 const StorageScreen = () => {
   const [userItems, setUserItems] = useState([]);
-  
+  const [isPopupVisible, setPopupVisible] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
+
   const route = useRoute();
   const userId = route.params.userId;
+
+  const showPopup = (message) => {
+    setPopupMessage(message);
+    setPopupVisible(true);
+  
+    // Automatically hide the pop-up after 2 seconds
+    setTimeout(() => {
+      setPopupVisible(false);
+      setPopupMessage('');
+    }, 5000);
+  };
 
   const handleOfferToCommunity = async (itemId) => {
     try {
@@ -31,6 +46,8 @@ const StorageScreen = () => {
             item.id === itemId ? { ...item, addtocommunity: 1 } : item
           )
         );
+        // Set the success message
+        showPopup('Item offered to the community successfully.');
       } else {
         console.error('Failed to offer item to the community:', response.status);
       }
@@ -45,14 +62,17 @@ const StorageScreen = () => {
       if (response.ok) {
         const data = await response.json();
         setUserItems(data);
-        // Call the notification scheduling function here if needed
-        scheduleItemNotifications(data);
       } else {
         console.error('Failed to fetch user items:', response.status);
       }
     } catch (error) {
       console.error('Error fetching user items:', error);
     }
+  };
+
+  const handleScheduleNotifications = () => {
+    // Call the notification scheduling function here
+    scheduleItemNotifications(userItems);
   };
 
   useEffect(() => {
@@ -71,6 +91,8 @@ const StorageScreen = () => {
       if (response.ok) {
         // If the deletion was successful, update the userItems state to reflect the change
         setUserItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+        // Show a success message
+        showPopup(`Item was removed from storage.`);
       } else {
         console.error('Failed to remove item from storage:', response.status);
       }
@@ -79,82 +101,220 @@ const StorageScreen = () => {
     }
   };
 
-  return (
-    <ImageBackground
+  const isItemExpired = (expiryDate) => {
+    const currentDate = new Date();
+    return currentDate > new Date(expiryDate);
+  };
+
+  const handleAddToShoppingList = async (itemId, itemName) => {
+    // Make a POST request to add the item to the shopping list with quantity 1
+    try {
+      const response = await fetch(`${serverUrl}/api/shopping-list`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId, 
+          name: itemName,
+          quantity: 1,
+        }),
+      });
+      if (response.ok) {
+        // Update the state to remove the item from the storage
+        setUserItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+        // Call handleRemoveFromStorage to delete the item from storage
+        handleRemoveFromStorage(itemId);
+        // Show a success message
+        showPopup(`${itemName} was added to the shopping list and removed from storage.`);
+      } else {
+        console.error('Failed to add item to shopping list:', response.status);
+      }
+    } catch (error) {
+      console.error('Error adding item to shopping list:', error);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserItems();
+    }, [])
+  );
+
+return (
+  <ImageBackground
     source={require('../Pictures/background.jpg')}
     style={styles.backgroundImage}
   >
-    <View style={styles.container}>
-      <FlatList
-        data={userItems}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.itemContainer}>
-            <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemExpiryDate}>
-              {new Date(item.expiry_date).toLocaleDateString(undefined, {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </Text>
-            {item.addtocommunity === 0 ? (
-              <Button title="Offer to Community" onPress={() => handleOfferToCommunity(item.id)} />
-            ) : (
-              <Button title="Remove from Storage" onPress={() => handleRemoveFromStorage(item.id)} />
-            )}
-            {item.addtocommunity === 1 && (
-                      <Text style={styles.communityText}>Currently offered to the Community</Text>
-            )}
+    <ScrollView>
+      <View style={styles.container}>
+        <TouchableOpacity
+          onPress={handleScheduleNotifications}
+          style={styles.scheduleNotificationsButton}
+        >
+          <Text style={styles.scheduleNotificationsButtonText}>
+            Schedule Expiry Notifications
+          </Text>
+        </TouchableOpacity>
+        {userItems.map((item) => (
+          <View key={item.id} style={styles.itemContainer}>
+            <View style={styles.itemDetailsContainer}>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemExpiryDate}>
+                Expiry Date: {new Date(item.expiry_date).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </Text>
+            </View>
+            <View style={styles.itemButtonsContainer}>
+              {isItemExpired(item.expiry_date) ? (
+                <View>
+                  <Text style={styles.expiredText}>
+                    Item Expired
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.addToShoppingListButton}
+                    onPress={() => handleAddToShoppingList(item.id, item.name)}
+                  >
+                    <Ionicons name="basket" size={24} color="green" />
+                    <Text style={styles.addToShoppingListText}>
+                      Add to Shopping List
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : item.addtocommunity === 1 ? (
+                <Text style={styles.communityText}>
+                  Already Offered to Community
+                </Text>
+              ) : (
+                <TouchableOpacity
+                  style={styles.offerButton}
+                  onPress={() => handleOfferToCommunity(item.id)}
+                >
+                  <Text style={styles.offerButtonText}>
+                    Offer to Community
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={() => handleRemoveFromStorage(item.id)}
+              >
+                <Ionicons name="trash" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
           </View>
-        )}
-      />
-    </View>
-    </ImageBackground>
-  )};
-  
+        ))}
+        <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isPopupVisible}
+        onRequestClose={() => {
+          setPopupVisible(false);
+          setPopupMessage('');
+        }}
+      >
+        <View style={styles.popup}>
+          <Text style={styles.popupText}>{popupMessage}</Text>
+        </View>
+      </Modal>
+      </View>
+    </ScrollView>
+  </ImageBackground>
+  );
+};
 
 const styles = StyleSheet.create({
-    itemContainer: {
-        padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-        backgroundColor: 'white',
-        marginBottom: 10,
-        borderRadius: 10,
-        opacity: 0.8,
-      },
-      itemText: {
-        fontSize: 16,
-        marginBottom: 5,
-      },
-      offerButton: {
-        backgroundColor: 'purple',
-        padding: 10,
-        margin: 10,
-        borderRadius: 5,
-        alignItems: 'center',
-      },
-      offerButtonText: {
-        color: 'white',
-        fontSize: 16,
-      },
-      communityText: {
-        color: 'gray',
-        fontSize: 16,
-        marginTop: 5,
-      },
-      removeButton: {
-        backgroundColor: 'red',
-        padding: 10,
-        margin: 10,
-        borderRadius: 5,
-        alignItems: 'center',
-      },
-      removeButtonText: {
-        color: 'white',
-        fontSize: 16,
-      },
-    });
+  itemContainer: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    backgroundColor: 'white',
+    marginBottom: 10,
+    borderRadius: 20,
+    opacity: 0.85,
+  },
+  itemText: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  offerButton: {
+    backgroundColor: 'purple',
+    padding: 10,
+    margin: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  offerButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  communityText: {
+    color: 'gray',
+    fontSize: 15,
+    marginTop: 5,
+  },
+  removeButton: {
+    backgroundColor: 'red',
+    padding: 10,
+    margin: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  removeButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  scheduleNotificationsButton: {
+    backgroundColor: 'blue',
+    padding: 10,
+    margin: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  scheduleNotificationsButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  itemDetailsContainer: {
+    flexGrow: 1,
+  },
+  itemButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  expiredText: {
+    color: 'red',
+    fontSize: 15,
+    marginTop: 5,
+  },
+  addToShoppingListButton: {
+    backgroundColor: 'transparent',
+    borderColor: 'green',
+    borderWidth: 1,
+    padding: 10,
+    margin: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  popup: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  popupText: {
+    fontSize: 18,
+    color: 'white',
+    padding: 20,
+    width: '80%',
+    backgroundColor: 'rgba(0, 128, 0, 0.8)',
+    borderRadius: 10,
+  },
+});
 
 export default StorageScreen;

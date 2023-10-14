@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Button, StyleSheet, Modal, ImageBackground } from 'react-native';
+import { View, Text, FlatList, Button, StyleSheet, Modal, ImageBackground, TouchableOpacity } from 'react-native';
 import ResidentialDataForm from '../ResidentialDataForm';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
 const serverUrl = 'http://sneeze.internet-box.ch:3006';
 
@@ -16,31 +17,39 @@ const CommunityScreen = () => {
   const route = useRoute();
   const userId = route.params.userId;
 
+  useEffect(() => {
+    fetchUserResidentialData();
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
-        fetchCommunityItems();
-        fetchUserResidentialData();
+      fetchCommunityItems();
     }, [])
   );
 
-  const fetchCommunityItems = async () => {
-    try {
-      // Make a GET request to your API endpoint for community items
-      const response = await fetch(`${serverUrl}/api/community-items`);
-      if (response.ok) {
-        const data = await response.json();
-        setCommunityItems(data);
-      } else {
-        console.error('Failed to fetch community items:', response.status);
-      }
-    } catch (error) {
-      console.error('Error fetching community items:', error);
+const fetchCommunityItems = async () => {
+  const userId = route.params.userId;
+
+  try {
+    const response = await fetch(`${serverUrl}/api/community-items`);
+    if (response.ok) {
+      const data = await response.json();
+      // Filter out expired items and items owned by the current user
+      const currentDate = new Date();
+      const filteredItems = data.filter((item) => {
+        return new Date(item.expiry_date) > currentDate && item.ownerId !== userId;
+      });
+      setCommunityItems(filteredItems);
+    } else {
+      console.error('Failed to fetch community items:', response.status);
     }
-  };
+  } catch (error) {
+    console.error('Error fetching community items:', error);
+  }
+};
 
   const fetchUserResidentialData = async () => {
     try {
-      // Make a GET request to check if the user has residential data
       const response = await fetch(`${serverUrl}/api/check-residential-data?userId=${userId}`);
       if (response.ok) {
         const data = await response.json();
@@ -54,7 +63,6 @@ const CommunityScreen = () => {
   };
 
   const handleSubmitResidentialData = async (data) => {
-    // Make a POST request to insert the user's residential data
     console.log('Sending request...');
     const response = await fetch(`${serverUrl}/api/insert-residential-data`, {
       method: 'POST',
@@ -66,11 +74,9 @@ const CommunityScreen = () => {
 
     if (response) {
       if (response.ok) {
-        // Data inserted successfully
         setHasResidentialData(true);
         console.log('Data inserted successfully');
       } else {
-        // Registration failed, handle errors or show an error message
         const errorData = await response.json();
         console.error('Failed to insert residential data:', errorData.error || 'An error occurred during registration');
       }
@@ -79,22 +85,14 @@ const CommunityScreen = () => {
     }
   };
 
-  const handleCloseCommunity = () => {
-    // Navigate to another screen when the "Close Community" button is pressed
-    setIsCommunityVisible(false);
-  };
-
-  const handleTakeItem = (itemId, requestingUserId) => {
-    // Make an API call to fetch user information for the requesting user
-    fetch(`/api/user-info/${requestingUserId}`) // Replace with your actual API endpoint
+  const handleTakeItem = async (itemId, requestingUserId) => {
+    const response = await fetch(`${serverUrl}/api/user-info/${requestingUserId}`)
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          // Assuming the API response contains user information
           const requestingUser = data.user;
-
-          // Display the request modal to the current item owner
           setRequestingUser(requestingUser);
+          setRequestingUserId(requestingUserId);
           setRequestModalVisible(true);
         } else {
           console.error('Failed to fetch user information for requesting user.');
@@ -106,14 +104,12 @@ const CommunityScreen = () => {
   };
 
   const handleApproveRequest = () => {
-    // Assuming you have the current item's ID, requestingUserId, and the item's current owner in state
     const updatedItem = {
       id: currentItem.id,
-      addtocommunity: 0, // Set addtocommunity to 0 to indicate it's no longer in the community
-      ownerUserId: requestingUserId, // Set the new owner to the requesting user
+      addtocommunity: 0,
+      ownerUserId: requestingUserId,
     };
 
-    // Make an API call to update the item in the database
     fetch(`/api/update-item/${currentItem.id}`, {
       method: 'PUT',
       headers: {
@@ -124,17 +120,8 @@ const CommunityScreen = () => {
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          // Item updated successfully
-
-          // Close the request modal
           setRequestModalVisible(false);
-
-          // Set approved to true
           setApproved(true);
-
-          // Optionally, you can update the local state to reflect the changes
-          // For example, you can remove the item from the communityItems list
-          // and update the item's owner in the local state
         } else {
           console.error('Failed to update the item in the database.');
         }
@@ -144,86 +131,161 @@ const CommunityScreen = () => {
       });
   };
 
+  const handleRemoveFromCommunity = async (itemId) => {
+    try {
+      const response = await fetch(`${serverUrl}/api/update-item/${itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ addtocommunity: 0 }),
+      });
+  
+      if (response.ok) {
+        // Remove the item from the communityItems state.
+        setCommunityItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to update the item in the database:', errorData.error);
+      }
+    } catch (error) {
+      console.error('Error updating the item:', error);
+    }
+  };
+
   return (
-    <ImageBackground
-    source={require('../Pictures/background.jpg')}
-    style={styles.backgroundImage}
-  >
-    <View style={styles.container}>
-      <Text style={styles.header}>Community Items</Text>
-      {hasResidentialData ? (
-        <FlatList
-          data={communityItems}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => {
-            // Parse the ISO date string into a JavaScript Date object
-            const expiryDate = new Date(item.expiry_date);
-
-            // Format the date as desired (e.g., "Day Month Year")
-            const formattedExpiryDate = expiryDate.toLocaleDateString('en-US', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            });
-            return (
-              <View style={styles.itemContainer}>
-                <Text style={styles.itemText}>Name: {item.name}</Text>
-                <Text style={styles.itemText}>Expiry Date: {formattedExpiryDate}</Text>
-                <Button title="Take" onPress={() => handleTakeItem(item.id, item.ownerId)} />
-              </View>
-            );
-          }}
-        />
-      ) : (
-        <ResidentialDataForm userId={userId} onSubmit={handleSubmitResidentialData} onClose={() => setHasResidentialData(true)} />
-      )}
-
-      {/* Add the request modal here */}
-      <Modal
-        visible={requestModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setRequestModalVisible(false)}
-      >
-        <View>
-          <Text>{requestingUser ? `${requestingUser.name} wants to take the item.` : ''}</Text>
-          {requestingUser && !approved && (
-            <Button title="Approve" onPress={handleApproveRequest} />
-          )}
-          <Button title="Decline" onPress={() => setRequestModalVisible(false)} />
-        </View>
-      </Modal>
-    </View>
+    <ImageBackground source={require('../Pictures/background.jpg')} style={styles.backgroundImage}>
+      <View style={styles.Container}>
+        {hasResidentialData ? (
+          <FlatList
+            data={communityItems}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => {
+              const expiryDate = new Date(item.expiry_date);
+              const formattedExpiryDate = expiryDate.toLocaleDateString('en-US', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              });
+  
+              // Check if the user is the owner of the item to show the "Remove from Community" icon
+              const isOwner = item.user_id === userId;
+  
+              return (
+                <View style={styles.itemContainer}>
+                  <View style={styles.item}>
+                    <Text style={styles.itemText}>Name: {item.name}</Text>
+                    <Text style={styles.itemText}>Expiry Date: {formattedExpiryDate}</Text>
+                    <View style={styles.itemIcons}>
+                      {isOwner ? (
+                        <Ionicons
+                          name="trash"
+                          size={24}
+                          color="red"
+                          style={styles.icon}
+                          onPress={() => handleRemoveFromCommunity(item.id)}
+                        />
+                      ) : (
+                        <TouchableOpacity
+                          onPress={() => handleTakeItem(item.id, item.ownerId)}
+                        >
+                          <View style={styles.requestButton}>
+                            <Ionicons
+                              name="basket"
+                              size={24}
+                              color="green"
+                              style={styles.icon}
+                            />
+                            <Text style={styles.requestButtonText}>Request item</Text>
+                          </View>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                </View>
+              );
+            }}
+          />
+        ) : null}
+    
+        {hasResidentialData ? null : (
+          <ResidentialDataForm userId={userId} onSubmit={handleSubmitResidentialData} onClose={() => setHasResidentialData(true)} />
+        )}
+    
+        <Modal
+          visible={requestModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setRequestModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalText}>
+              {requestingUser ? `${requestingUser.name} wants to take the item.` : ''}
+            </Text>
+            {requestingUser && !approved && (
+              <Button title="Approve" onPress={handleApproveRequest} />
+            )}
+            <Button title="Decline" onPress={() => setRequestModalVisible(false)} />
+          </View>
+        </Modal>
+      </View>
     </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    marginTop: 100,
-    borderRadius: 15,
+  Container: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    backgroundColor: 'white',
+    marginBottom: 10,
+    borderRadius: 20,
+    opacity: 0.85,
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
+    textAlign: 'center',
   },
   itemContainer: {
     borderWidth: 1,
-    borderColor: 'gray',
-    borderRadius: 5,
+    borderColor: 'white',
+    backgroundColor: 'white',
+    borderRadius: 10,
     padding: 16,
     marginBottom: 16,
-  },
-  closeButton: {
-    marginTop: 16,
+    opacity: 0.85,
   },
   itemText: {
     fontSize: 16,
-    marginBottom: 5,
+    marginBottom: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  itemIcons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  requestButton: {
+    backgroundColor: 'transparent',
+    borderColor: 'green',
+    borderWidth: 1,
+    padding: 10,
+    margin: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
 });
 

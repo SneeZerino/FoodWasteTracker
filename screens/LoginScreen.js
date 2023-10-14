@@ -56,6 +56,11 @@ function LoginScreen({ navigation }) {
     }
   };
 
+  const clearInputFields = () => {
+    setUsername('');
+    setPassword('');
+  };
+  
   const handleLogin = async () => {
     try {
       const response = await fetch(`${serverUrl}/api/login`, {
@@ -71,6 +76,7 @@ function LoginScreen({ navigation }) {
           const user_id = userData.userId;
           console.log('Retrieved userId:', user_id);
           navigation.navigate('Main', { userId: user_id });
+          clearInputFields();
         } else {
           console.error('Server response is missing user ID');
         }

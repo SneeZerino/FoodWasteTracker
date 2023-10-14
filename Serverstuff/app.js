@@ -265,7 +265,6 @@ app.get('/api/check-residential-data', async (req, res) => {
   // Add a new API endpoint for changing Item to new User
   app.put('/api/update-item/:itemId', async (req, res) => {
     const { itemId } = req.params;
-    const { addtocommunity, ownerUserId } = req.body;
   
     // Check if itemId is a valid integer
     if (!itemId || isNaN(parseInt(itemId))) {
@@ -274,8 +273,8 @@ app.get('/api/check-residential-data', async (req, res) => {
   
     try {
       // Update the item in the database based on itemId
-      const updateItemQuery = 'UPDATE products SET addtocommunity = 0, user_id = $2 WHERE id = $3';
-      await pool.query(updateItemQuery, [ownerUserId, itemId]);
+      const updateItemQuery = 'UPDATE products SET addtocommunity = 0 WHERE id = $1';
+      await pool.query(updateItemQuery, [itemId]);
   
       res.status(200).json({ success: true });
     } catch (error) {
@@ -283,6 +282,7 @@ app.get('/api/check-residential-data', async (req, res) => {
       res.status(500).json({ success: false, error: 'An error occurred' });
     }
   });
+  
   
   app.post('/api/shopping-list', async (req, res) => {
     try {
