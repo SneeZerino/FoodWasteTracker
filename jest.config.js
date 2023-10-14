@@ -9,12 +9,13 @@ module.exports = {
     "./jest.setup.js"
   ],
   moduleNameMapper: {
-    'expo-device': './mocks/expo-device.js', // Mocked module path
-    'expo-notifications': './mocks/expo-notifications.js', // Mocked module path
-    'expo-constants': './mocks/expo-constants.js', // Mocked module path
-    '^react-navigation/native$': './mocks/react-navigation-native.js', // Mock for react-navigation
-    '^react-navigation-stack$': './mocks/react-navigation-stack.js', // Mock for react-navigation-stack
-    '^@react-navigation/native-stack$': './mocks/react-navigation-native-stack.js', // Mock for @react-navigation/native-stack
-    '^@react-navigation/stack$': './mocks/react-navigation-stack.js', // Mock for @react-navigation/stack
+    'expo-device': '<rootDir>/mocks/expo-device.js', // Mocked module path
+    'expo-notifications': '<rootDir>/mocks/expo-notifications.js', // Mocked module path
+    'expo-constants': '<rootDir>/mocks/expo-constants.js', // Mocked module path
+    '^react-navigation/native$': '<rootDir>/mocks/react-navigation-native.js', // Mock for react-navigation
+    '^react-navigation-stack$': '<rootDir>/mocks/react-navigation-stack.js', // Mock for react-navigation-stack
+    '^@react-navigation/native-stack$': '<rootDir>/mocks/react-navigation-native-stack.js', // Mock for @react-navigation/native-stack
+    '^@react-navigation/stack$': '<rootDir>/mocks/react-navigation-stack.js', // Mock for @react-navigation/stack
+    '^@expo/vector-icons$': '<rootDir>/mocks/expo-vector-icons.js', // Mock for Expo Vector Icons
   },
 };

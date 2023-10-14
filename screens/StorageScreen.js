@@ -4,6 +4,7 @@ import { useRoute } from '@react-navigation/native';
 import {scheduleItemNotifications} from '../notifyUser';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import {notification, usePushNotifications} from '../notifications'
 
 const serverUrl = 'http://sneeze.internet-box.ch:3006';
 
@@ -11,6 +12,7 @@ const StorageScreen = () => {
   const [userItems, setUserItems] = useState([]);
   const [isPopupVisible, setPopupVisible] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
+  const {expoPushToken} = usePushNotifications();
 
   const route = useRoute();
   const userId = route.params.userId;
