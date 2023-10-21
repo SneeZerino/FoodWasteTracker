@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 const LogoutButton = () => {
@@ -7,22 +7,33 @@ const LogoutButton = () => {
 
   const handleLogout = () => {
     // Perform your logout action here
-    // For example, clearing user credentials or tokens
-
     // Navigate back to the login screen
     navigation.navigate('Login'); // Replace 'Login' with your login screen name
   };
 
   return (
     <View style={styles.container}>
-      <Button title="Logout" onPress={handleLogout} />
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleLogout}
+      >
+        <Text style={styles.buttonText}>Logout</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginRight: 10, // Adjust this for proper positioning
+    marginRight: 10,
+  },
+  button: {
+    backgroundColor: 'black',
+    padding: 10,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: 'white',
   },
 });
 

@@ -362,6 +362,26 @@ app.get('/api/check-residential-data', async (req, res) => {
       res.status(500).json({ error: 'An error occurred' });
     }
   });
+// Add a new API endpoint for fetching statistics
+app.get('/api/statistics', async (req, res) => {
+  try {
+    // Query the database to fetch the total number of items
+    const fetchTotalItemsQuery = 'SELECT COUNT(*) FROM products';
+    const { rows: totalItems } = await pool.query(fetchTotalItemsQuery);
+
+    // Query the database to fetch the number of items with the community
+    const fetchCommunityItemsQuery = 'SELECT COUNT(*) FROM products WHERE "addtocommunity" = 1';
+    const { rows: itemsWithCommunity } = await pool.query(fetchCommunityItemsQuery);
+
+    res.status(200).json({
+      totalItems: parseInt(totalItems[0].count),
+      itemsWithCommunity: parseInt(itemsWithCommunity[0].count),
+    });
+  } catch (error) {
+    console.error('Error fetching statistics:', error);
+    res.status(500).json({ error: 'An error occurred' });
+  }
+});
 
 // Start the server
 app.listen(port, () => {

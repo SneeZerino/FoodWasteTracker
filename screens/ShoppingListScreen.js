@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ImageBackground, ScrollView } from 'react-native';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 const serverUrl = 'http://sneeze.internet-box.ch:3006';
 
@@ -8,6 +9,9 @@ const ShoppingListScreen = () => {
   const [shoppingList, setShoppingList] = useState([]);
   const [newItemName, setNewItemName] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('');
+  const [isEditingQuantity, setIsEditingQuantity] = useState(false);
+  const [editedItemId, setEditedItemId] = useState(null);
+  const [editedItemQuantity, setEditedItemQuantity] = useState('');
 
   const route = useRoute();
   const userId = route.params.userId;
@@ -70,7 +74,7 @@ const ShoppingListScreen = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          quantity,
+          quantity: quantity.trim() === '' ? 0 : quantity,
         }),
       });
 
@@ -103,53 +107,96 @@ const ShoppingListScreen = () => {
     }
   };
 
+  const openQuantityEditor = (itemId, currentQuantity) => {
+    setIsEditingQuantity(true);
+    setEditedItemId(itemId);
+    setEditedItemQuantity(currentQuantity.toString());
+  };
+
+  const saveQuantityEditor = async () => {
+    setIsEditingQuantity(false);
+    if (editedItemId) {
+      handleUpdateQuantity(editedItemId, editedItemQuantity);
+    }
+    setEditedItemId(null);
+  };
   return (
     <ImageBackground
-    source={require('../Pictures/background.jpg')}
-    style={styles.backgroundContainer}
-  >
-    <View style={styles.container}>
-      <View style={styles.headerContainer}>
+      source={require('../Pictures/background.jpg')}
+      style={styles.backgroundContainer}
+    >
+      <View style={styles.container}>
+        <View style={styles.inputContainer}>
+          <TextInput
+            placeholder="Item Name"
+            value={newItemName}
+            onChangeText={(text) => setNewItemName(text)}
+            style={styles.input}
+            placeholderTextColor="#888"
+          />
+          <TextInput
+            placeholder="Quantity"
+            value={newItemQuantity}
+            onChangeText={(text) => setNewItemQuantity(text)}
+            style={[styles.quantityInput]}
+            placeholderTextColor="#888"
+          />
+        <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleAddItem}
+            >
+            <MaterialIcons name="post-add" size={50} color="green" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.inputTextContainer}>
+        <Text style={styles.labelName}>Item Name</Text>
+        <Text style={styles.labelQuantity}>Quantity</Text>
       </View>
-      <View style={styles.inputContainer}>
-        <TextInput
-          placeholder="Item Name"
-          value={newItemName}
-          onChangeText={(text) => setNewItemName(text)}
-          style={styles.input}
-          placeholderTextColor="#888"
-        />
-        <TextInput
-          placeholder="Quantity"
-          value={newItemQuantity}
-          onChangeText={(text) => setNewItemQuantity(text)}
-          style={[styles.input, styles.quantityInput]}
-          placeholderTextColor="#888"
-        />
-      </View>
-      <TouchableOpacity onPress={handleAddItem} style={styles.addButton}>
-        <Text style={styles.buttonText}>Add Item</Text>
-      </TouchableOpacity>
-      <FlatList
-        data={shoppingList}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.itemContainer}>
-            <Text style={styles.itemName}>{item.name}</Text>
+      <ScrollView style={styles.itemList}>
+    {shoppingList.map((item) => (
+      <View key={item.id} style={styles.itemContainer}>
+        <Text style={styles.itemName}>{item.name}</Text>
+        <TouchableOpacity
+          style={styles.editQuantityButton}
+          onPress={() => openQuantityEditor(item.id, item.quantity)}
+        >
+          <Ionicons name="create" size={24} color="blue" />
+        </TouchableOpacity>
+        {isEditingQuantity && editedItemId === item.id ? (
+          <View style={styles.quantityInputContainer}>
             <TextInput
-              placeholder="Quantity"
-              value={item.quantity.toString()}
-              onChangeText={(text) => handleUpdateQuantity(item.id, text)}
-              style={styles.quantityInput}
+              placeholder="New Quantity"
+              value={editedItemQuantity}
+              onChangeText={(text) => setEditedItemQuantity(text)}
+              style={styles.quantityEditorInput}
               placeholderTextColor="#888"
             />
-            <TouchableOpacity onPress={() => handleDeleteItem(item.id)}>
-              <Text style={styles.deleteButton}>Delete</Text>
+            <TouchableOpacity
+              style={styles.quantityEditorSaveButton}
+              onPress={saveQuantityEditor}
+            >
+              <Text style={styles.quantityEditorSaveButtonText}>Save</Text>
             </TouchableOpacity>
           </View>
+        ) : (
+          <TextInput
+            placeholder="Quantity"
+            value={item.quantity === 0 ? '' : item.quantity.toString()}
+            editable={false}
+            style={styles.quantityListInput}
+            placeholderTextColor="#888"
+          />
         )}
-      />
-    </View>
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={() => handleDeleteItem(item.id)}
+        >
+          <Ionicons name="trash" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+    ))}
+  </ScrollView>
+      </View>
     </ImageBackground>
   );
 };
@@ -162,7 +209,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 8,
-    backgroundColor: '#fff',
     paddingHorizontal: 30,
     paddingVertical: 30,
     marginBottom: 8,
@@ -182,14 +228,38 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   inputContainer: {
+    flexWrap: 'wrap',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingHorizontal: 8,
+    margin: 8,
+    padding: 8,
+    backgroundColor: 'rgba(30,30,30,0.7)', 
+    borderRadius: 5,
+    paddingBottom: 0,
+    marginBottom: 20,
   },
   input: {
-    flex: 1,
+    width: '50%',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 8,
+    marginRight: 8,
+    color: '#333',
+    backgroundColor: 'white',
+  },
+  quantityInput: {
+    width: '30%',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 8,
+    color: '#333',
+    backgroundColor: 'white',
+  },
+  quantityListInput: {
+    width: 35,
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 5,
@@ -197,18 +267,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
     color: '#333',
   },
-  quantityInput: {
-    marginRight: 0,
-  },
-  addButton: {
-    backgroundColor: '#007bff',
-    borderRadius: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
   buttonText: {
-    color: '#fff',
+    color: 'white',
     fontWeight: 'bold',
   },
   itemContainer: {
@@ -220,13 +280,76 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 5,
+    backgroundColor: 'white',
+    opacity: 0.8,
   },
   itemName: {
     flex: 1,
     color: '#333',
   },
-  deleteButton: {
-    color: 'red',
+  removeButton: {
+    backgroundColor: 'red',
+    width: 40,
+    height: 40,
+    padding: 5,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  labelName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: 'white',
+  },
+  labelQuantity: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: 'white',
+    marginLeft: 100,
+  },
+  itemList: {
+    padding: 8,
+  },
+  inputTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    margin: 8,
+    padding: 8,
+    backgroundColor: 'rgba(30,30,30,0.7)',
+    borderRadius: 5,
+  },
+  editQuantityButton: {
+    backgroundColor: 'transparent',
+    padding: 8,
+  },
+  quantityEditorOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  quantityEditor: {
+    width: 300,
+    padding: 16,
+    backgroundColor: 'white',
+    borderRadius: 5,
+  },
+  quantityEditorInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 8,
+    marginBottom: 8,
+    color: '#333',
+  },
+  quantityEditorSaveButton: {
+    backgroundColor: 'green',
+    borderRadius: 5,
+    padding: 8,
+    alignItems: 'center',
+  },
+  quantityEditorSaveButtonText: {
+    color: 'white',
     fontWeight: 'bold',
   },
 });

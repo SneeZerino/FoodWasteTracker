@@ -260,6 +260,8 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     backgroundColor: 'red',
+    width: 55,
+    height: 50,
     padding: 10,
     margin: 10,
     borderRadius: 5,
@@ -270,7 +272,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   scheduleNotificationsButton: {
-    backgroundColor: 'blue',
+    backgroundColor: '#3498db',
     padding: 10,
     margin: 10,
     borderRadius: 5,

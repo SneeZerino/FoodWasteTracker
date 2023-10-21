@@ -155,80 +155,78 @@ const fetchCommunityItems = async () => {
 
   return (
     <ImageBackground source={require('../Pictures/background.jpg')} style={styles.backgroundImage}>
-      <View style={styles.Container}>
-        {hasResidentialData ? (
-          <FlatList
-            data={communityItems}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => {
-              const expiryDate = new Date(item.expiry_date);
-              const formattedExpiryDate = expiryDate.toLocaleDateString('en-US', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              });
+      {hasResidentialData ? (
+        <FlatList
+          data={communityItems}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => {
+            const expiryDate = new Date(item.expiry_date);
+            const formattedExpiryDate = expiryDate.toLocaleDateString('en-US', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            });
   
-              // Check if the user is the owner of the item to show the "Remove from Community" icon
-              const isOwner = item.user_id === userId;
+            // Check if the user is the owner of the item to show the "Remove from Community" icon
+            const isOwner = item.user_id === userId;
   
-              return (
-                <View style={styles.itemContainer}>
-                  <View style={styles.item}>
-                    <Text style={styles.itemText}>Name: {item.name}</Text>
-                    <Text style={styles.itemText}>Expiry Date: {formattedExpiryDate}</Text>
-                    <View style={styles.itemIcons}>
-                      {isOwner ? (
-                        <Ionicons
-                          name="trash"
-                          size={24}
-                          color="red"
-                          style={styles.icon}
-                          onPress={() => handleRemoveFromCommunity(item.id)}
-                        />
-                      ) : (
-                        <TouchableOpacity
-                          onPress={() => handleTakeItem(item.id, item.ownerId)}
-                        >
-                          <View style={styles.requestButton}>
-                            <Ionicons
-                              name="basket"
-                              size={24}
-                              color="green"
-                              style={styles.icon}
-                            />
-                            <Text style={styles.requestButtonText}>Request item</Text>
-                          </View>
-                        </TouchableOpacity>
-                      )}
-                    </View>
+            return (
+              <View style={styles.itemContainer}>
+                <View style={styles.item}>
+                  <Text style={styles.itemText}>Name: {item.name}</Text>
+                  <Text style={styles.itemText}>Expiry Date: {formattedExpiryDate}</Text>
+                  <View style={styles.itemIcons}>
+                    {isOwner ? (
+                      <Ionicons
+                        name="trash"
+                        size={24}
+                        color="red"
+                        style={styles.icon}
+                        onPress={() => handleRemoveFromCommunity(item.id)}
+                      />
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => handleTakeItem(item.id, item.ownerId)}
+                      >
+                        <View style={styles.requestButton}>
+                          <Ionicons
+                            name="basket"
+                            size={24}
+                            color="green"
+                            style={styles.icon}
+                          />
+                          <Text style={styles.requestButtonText}>Request item</Text>
+                        </View>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
-              );
-            }}
-          />
-        ) : null}
-    
-        {hasResidentialData ? null : (
-          <ResidentialDataForm userId={userId} onSubmit={handleSubmitResidentialData} onClose={() => setHasResidentialData(true)} />
-        )}
-    
-        <Modal
-          visible={requestModalVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setRequestModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalText}>
-              {requestingUser ? `${requestingUser.name} wants to take the item.` : ''}
-            </Text>
-            {requestingUser && !approved && (
-              <Button title="Approve" onPress={handleApproveRequest} />
-            )}
-            <Button title="Decline" onPress={() => setRequestModalVisible(false)} />
-          </View>
-        </Modal>
-      </View>
+              </View>
+            );
+          }}
+        />
+      ) : null}
+  
+      {hasResidentialData ? null : (
+        <ResidentialDataForm userId={userId} onSubmit={handleSubmitResidentialData} onClose={() => setHasResidentialData(true)} />
+      )}
+  
+      <Modal
+        visible={requestModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setRequestModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalText}>
+            {requestingUser ? `${requestingUser.name} wants to take the item.` : ''}
+          </Text>
+          {requestingUser && !approved && (
+            <Button title="Approve" onPress={handleApproveRequest} />
+          )}
+          <Button title="Decline" onPress={() => setRequestModalVisible(false)} />
+        </View>
+      </Modal>
     </ImageBackground>
   );
 };
