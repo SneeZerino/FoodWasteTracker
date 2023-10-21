@@ -20,36 +20,55 @@ const AddGroceriesInput = () => {
   const serverUrl = 'http://sneeze.internet-box.ch:3006';
 
   const handleManualAdd = async () => {
-      // Check if either productName or expiryDate is empty
     if (!productName || !expiryDate) {
       console.log('Product name and expiry date are required.');
       return;
     }
+  
     try {
       // Define the product data to be inserted
       const productData = {
         name: productName,
         expiry_date: expiryDate,
-        user_id: userId, // Replace userId with the user ID obtained after login
+        user_id: userId,
         addtocommunity,
       };
-
+  
       // Log the product data before making the API request
       console.log('Product Data:', productData);
-
+  
       const response = await fetch(`${serverUrl}/api/foodwastetracker/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productData),
       });
-
+  
       if (response.ok) {
         // Product added successfully
+  
+        const communityProductData = {
+          name: productName,
+          expiry_date: expiryDate,
+          user_id: userId,
+          addtocommunity,
+        };
+  
+        const communityResponse = await fetch(`${serverUrl}/api/global-items`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(communityProductData),
+        });
+  
+        if (communityResponse.ok) {
+          console.log('Product added to the global_items table successfully.');
+        } else {
+          console.error('Error adding product to global_items table:', communityResponse.status);
+        }
+  
         setProductName('');
         setExpiryDate('');
         setAddToCommunity(0);
-
-        setScanned(false)
+        setScanned(false);
       } else {
         // Handle errors or show an error message
         console.error('Error adding product:', response.status);
@@ -89,10 +108,6 @@ const AddGroceriesInput = () => {
     }
   };
 
-  const handleStatistics = () => {
-    navigation.navigate('StatisticsScreen');
-  };
-
   useEffect(() => {
     (async () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -107,9 +122,6 @@ const AddGroceriesInput = () => {
         <TouchableOpacity style={styles.button} onPress={() => {setIsCameraActive(true); setIsModalVisible(true)}}>
           <Text style={styles.buttonText}>Add Groceries</Text>
         </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={handleStatistics}>
-            <Text style={styles.buttonText}>Statistics</Text>
-          </TouchableOpacity>
         </View>
         <Modal visible={isModalVisible} animationType="slide" transparent={true}>
           <View style={styles.modalContainer}>

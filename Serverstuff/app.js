@@ -382,7 +382,65 @@ app.get('/api/statistics', async (req, res) => {
     res.status(500).json({ error: 'An error occurred' });
   }
 });
+// Add a new API endpoint to store Item in global_items
+app.post('/api/global-items', async (req, res) => {
+  const { name, expiry_date, user_id, addtocommunity } = req.body;
 
+  try {
+    const insertGlobalItemQuery = `
+      INSERT INTO global_items (name, expiry_date, user_id, addtocommunity)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id;
+    `;
+
+    const values = [name, expiry_date, user_id, addtocommunity];
+    const { rows } = await pool.query(insertGlobalItemQuery, values);
+
+    res.status(201).json({ id: rows[0].id, message: 'Item added to global_items table successfully' });
+  } catch (error) {
+    console.error('Error adding item to global_items table:', error);
+    res.status(500).json({ error: 'An error occurred' });
+  }
+});
+// Add a new API to update Item in global_items
+app.post('/api/update-global-item', async (req, res) => {
+  const { itemId, addtocommunity } = req.body;
+
+  if (!itemId || addtocommunity === undefined) {
+    return res.status(400).json({ error: 'Invalid request data' });
+  }
+
+  try {
+    // Update the global_items table with the new addtocommunity value
+    const updateGlobalItemQuery = 'UPDATE global_items SET addtocommunity = $1 WHERE id = $2';
+    await pool.query(updateGlobalItemQuery, [addtocommunity, itemId]);
+
+    res.status(200).json({ message: 'Item in global_items updated successfully.' });
+  } catch (error) {
+    console.error('Error updating global_items:', error);
+    res.status(500).json({ error: 'An error occurred while updating global_items' });
+  }
+});
+// Add a new API for fetching global_items
+app.get('/api/global-items/statistics', async (req, res) => {
+  try {
+    // Query the database to fetch the total number of global items
+    const fetchTotalGlobalItemsQuery = 'SELECT COUNT(*) FROM global_items';
+    const { rows: totalGlobalItems } = await pool.query(fetchTotalGlobalItemsQuery);
+
+    // Query the database to fetch the number of global items with the community
+    const fetchGlobalItemsWithCommunityQuery = 'SELECT COUNT(*) FROM global_items WHERE addtocommunity = 1';
+    const { rows: globalItemsWithCommunity } = await pool.query(fetchGlobalItemsWithCommunityQuery);
+
+    res.status(200).json({
+      totalGlobalItems: parseInt(totalGlobalItems[0].count),
+      globalItemsWithCommunity: parseInt(globalItemsWithCommunity[0].count),
+    });
+  } catch (error) {
+    console.error('Error fetching global items statistics:', error);
+    res.status(500).json({ error: 'An error occurred' });
+  }
+});
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

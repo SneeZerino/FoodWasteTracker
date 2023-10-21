@@ -30,7 +30,7 @@ const StorageScreen = () => {
 
   const handleOfferToCommunity = async (itemId) => {
     try {
-      // Make a POST request to update the item's addToCommunity property
+      // Make a POST request to update the item's addToCommunity property in the user's items
       const response = await fetch(`${serverUrl}/api/offer-to-community`, {
         method: 'POST',
         headers: {
@@ -40,16 +40,32 @@ const StorageScreen = () => {
           itemId,
         }),
       });
-
+  
       if (response.ok) {
-        // Item offered to the community successfully, update the state
+        // Item offered to the community successfully in the user's items, update the state
         setUserItems((prevItems) =>
           prevItems.map((item) =>
             item.id === itemId ? { ...item, addtocommunity: 1 } : item
           )
         );
-        // Set the success message
-        showPopup('Item offered to the community successfully.');
+  
+        const globalResponse = await fetch(`${serverUrl}/api/update-global-item`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            itemId,
+            addtocommunity: 1,
+          }),
+        });
+  
+        if (globalResponse.ok) {
+          // Item offered to the community successfully in the global_items table
+          showPopup('Item offered to the community successfully.');
+        } else {
+          console.error('Failed to offer item to the community in the global_items table:', globalResponse.status);
+        }
       } else {
         console.error('Failed to offer item to the community:', response.status);
       }
@@ -57,6 +73,7 @@ const StorageScreen = () => {
       console.error('Error offering item to the community:', error);
     }
   };
+  
 
   const fetchUserItems = async () => {
     try {
