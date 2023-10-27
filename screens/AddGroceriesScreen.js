@@ -3,10 +3,11 @@ import { View, Text, TextInput, Button, Modal, StyleSheet, ImageBackground, Touc
 import { useRoute } from '@react-navigation/native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { useNavigation } from '@react-navigation/native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const AddGroceriesInput = () => {
   const [productName, setProductName] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
+  const [expiryDate, setExpiryDate] = useState(new Date());
   const [addtocommunity, setAddToCommunity] = useState(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
@@ -20,7 +21,7 @@ const AddGroceriesInput = () => {
   const serverUrl = 'http://sneeze.internet-box.ch:3006';
 
   const handleManualAdd = async () => {
-    if (!productName || !expiryDate) {
+    if (!productName || expiryDate === null) {
       console.log('Product name and expiry date are required.');
       return;
     }
@@ -66,7 +67,7 @@ const AddGroceriesInput = () => {
         }
   
         setProductName('');
-        setExpiryDate('');
+        setExpiryDate(new Date());
         setAddToCommunity(0);
         setScanned(false);
       } else {
@@ -132,11 +133,15 @@ const AddGroceriesInput = () => {
               onChangeText={(text) => setProductName(text)}
               style={styles.input}
             />
-            <TextInput
-              placeholder="Expiry Date"
+            <DateTimePicker
               value={expiryDate}
-              onChangeText={(text) => setExpiryDate(text)}
-              style={styles.input}
+              mode="date"
+              display="calendar"
+              onChange={(event, selectedDate) => {
+                console.log('Selected Date:', selectedDate);
+                const currentDate = selectedDate || expiryDate;
+                setExpiryDate(currentDate);
+              }}
             />
             {hasPermission && (
               <BarCodeScanner
