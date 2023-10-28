@@ -5,8 +5,7 @@ import {scheduleItemNotifications} from '../notifyUser';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import {notification, usePushNotifications} from '../notifications'
-
-const serverUrl = 'http://sneeze.internet-box.ch:3006';
+import { serverUrl } from './config';
 
 const StorageScreen = () => {
   const [userItems, setUserItems] = useState([]);
@@ -25,7 +24,7 @@ const StorageScreen = () => {
     setTimeout(() => {
       setPopupVisible(false);
       setPopupMessage('');
-    }, 5000);
+    }, 1000);
   };
 
   const handleOfferToCommunity = async (itemId) => {
@@ -247,13 +246,15 @@ return (
 
 const styles = StyleSheet.create({
   itemContainer: {
-    padding: 15,
+    padding: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
     backgroundColor: 'white',
     marginBottom: 10,
     borderRadius: 20,
     opacity: 0.85,
+    borderWidth: 2,
+    borderColor: '#3498db',
   },
   itemText: {
     fontSize: 16,
@@ -336,6 +337,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 128, 0, 0.8)',
     borderRadius: 10,
   },
+  itemName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  }
 });
 
 export default StorageScreen;

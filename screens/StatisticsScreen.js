@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { useFocusEffect } from '@react-navigation/native';
-
-const serverUrl = 'http://sneeze.internet-box.ch:3006';
+import { serverUrl } from './config';
 
 const StatisticsScreen = () => {
   const [totalItems, setTotalItems] = useState(0);

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ImageBackground, ScrollView } from 'react-native';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-
-const serverUrl = 'http://sneeze.internet-box.ch:3006';
+import { serverUrl } from './config';
 
 const ShoppingListScreen = () => {
   const [shoppingList, setShoppingList] = useState([]);
@@ -141,7 +140,7 @@ const ShoppingListScreen = () => {
             style={[styles.quantityInput]}
             placeholderTextColor="#888"
           />
-        <TouchableOpacity
+          <TouchableOpacity
               style={styles.addButton}
               onPress={handleAddItem}
             >
@@ -281,6 +280,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: 'white',
     opacity: 0.8,
+    borderWidth: 2,
+    borderColor: '#3498db',
   },
   itemName: {
     flex: 1,

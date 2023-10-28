@@ -4,25 +4,40 @@ import { useRoute } from '@react-navigation/native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { MaterialIcons } from '@expo/vector-icons';
+import { serverUrl } from './config';
 
 const AddGroceriesInput = () => {
   const [productName, setProductName] = useState('');
   const [expiryDate, setExpiryDate] = useState(new Date());
   const [addtocommunity, setAddToCommunity] = useState(0);
-  const [isModalVisible, setIsModalVisible] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const navigation = useNavigation();
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [messageTimer, setMessageTimer] = useState(null);
 
   const route = useRoute();
   const userId = route.params.userId;
 
-  const serverUrl = 'http://sneeze.internet-box.ch:3006';
 
   const handleManualAdd = async () => {
     if (!productName || expiryDate === null) {
       console.log('Product name and expiry date are required.');
+      setErrorMessage('Product name and expiry date are required.');
+      setSuccessMessage('');
+
+      const errorTimer = setTimeout(() => {
+        setErrorMessage('');
+      }, 3000);
+  
+      if (messageTimer) {
+        clearTimeout(messageTimer);
+      }
+      setMessageTimer(errorTimer);
+  
       return;
     }
   
@@ -70,12 +85,25 @@ const AddGroceriesInput = () => {
         setExpiryDate(new Date());
         setAddToCommunity(0);
         setScanned(false);
+        setSuccessMessage('Product added successfully.');
+        setErrorMessage('');
+
+        const timer = setTimeout(() => {
+          setSuccessMessage('');
+        }, 3000);
+    
+        setMessageTimer(timer);
       } else {
         // Handle errors or show an error message
         console.error('Error adding product:', response.status);
       }
     } catch (error) {
       console.error('Error adding product:', error);
+      setErrorMessage('Error adding product: ' + error.message);
+      setSuccessMessage('');
+      if (messageTimer) {
+        clearTimeout(messageTimer);
+      }
     }
     setIsCameraActive(false);
   };
@@ -114,52 +142,89 @@ const AddGroceriesInput = () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
       setHasPermission(status === 'granted');
     })();
-  }, []);
+    const unsubscribe = navigation.addListener('blur', () => {
+      setScanned(false);
+      setIsCameraActive(false);
+      setExpiryDate(new Date());
+      setProductName('');
+    });
+
+    // Return a cleanup function to remove the event listener when the component unmounts
+    return unsubscribe;
+  }, [navigation]);
+
 
   return (
     <ImageBackground source={require('../Pictures/background.jpg')} style={styles.backgroundImage}>
       <View style={styles.container}>
-        <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => {setIsCameraActive(true); setIsModalVisible(true)}}>
-          <Text style={styles.buttonText}>Add Groceries</Text>
-        </TouchableOpacity>
-        </View>
-        <Modal visible={isModalVisible} animationType="slide" transparent={true}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalHeader}>Manual Add</Text>
+        <View style={styles.contentContainer}>
+          <View style={styles.headerContainer}>
+            <Text style={styles.header}>Add Groceries to Storage</Text>
+          </View>
+          <View style={styles.inputContainer}>
             <TextInput
               placeholder="Product Name"
               value={productName}
               onChangeText={(text) => setProductName(text)}
               style={styles.input}
             />
-            <DateTimePicker
-              value={expiryDate}
-              mode="date"
-              display="calendar"
-              onChange={(event, selectedDate) => {
-                console.log('Selected Date:', selectedDate);
-                const currentDate = selectedDate || expiryDate;
-                setExpiryDate(currentDate);
-              }}
-            />
-            {hasPermission && (
-              <BarCodeScanner
-                onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-                style={styles.qrScanner}
+            <View style={styles.rowContainer}>
+              <Text style={styles.dateLabel}>Expiry Date</Text>
+              <DateTimePicker
+                value={expiryDate}
+                mode="date"
+                display="calendar"
+                onChange={(event, selectedDate) => {
+                  console.log('Selected Date:', selectedDate);
+                  const currentDate = selectedDate || expiryDate;
+                  setExpiryDate(currentDate);
+                }}
               />
-            )}
-            {scanned && (
-              <Button title="Tap to Scan Again" onPress={() => {setScanned(false); setExpiryDate(''); setProductName('');}}/>
-            )}
-            <Button title="Add" onPress={handleManualAdd} />
-            <Button title="Close" onPress={() => {setIsModalVisible(false); setScanned(false);setIsCameraActive(false);setExpiryDate('');setProductName('');}} />
+            </View>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleManualAdd}
+            >
+              <MaterialIcons name="post-add" size={50} color="green" />
+            </TouchableOpacity>
+            {successMessage && <Text style={styles.successMessage}>{successMessage}</Text>}
+            {errorMessage && <Text style={styles.errorMessage}>{errorMessage}</Text>}
           </View>
-        </Modal>
+          <View style={styles.buttonContainer}>
+            {scanned ? (
+              <TouchableOpacity
+                style={styles.scanAgainButton}
+                onPress={() => {
+                  setScanned(false);
+                  setExpiryDate(new Date());
+                  setProductName('');
+                  setIsCameraActive(true);
+                }}
+              >
+                <Text style={styles.buttonText}>Tap to Scan Again</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.cameraToggleButton}
+                onPress={() => setIsCameraActive(!isCameraActive)}
+              >
+                <Text style={styles.buttonText}>
+                  {isCameraActive ? 'Deactivate Barcode Scanner' : 'Activate Barcode Scanner'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {isCameraActive && hasPermission && (
+            <BarCodeScanner
+              onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+              style={styles.qrScanner}
+            />
+          )}
+        </View>
       </View>
     </ImageBackground>
   );
-};
+  };
 
 const styles = StyleSheet.create({
   backgroundImage: {
@@ -171,10 +236,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  buttonContainer: {
+  headerContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    margin: 20,
+    margin: 8,
+    padding: 8,
+    backgroundColor: 'rgba(30,30,30,0.7)',
+    borderRadius: 5,
+  },
+  header: {
+    color: 'white',
+    fontSize: 27,
   },
   button: {
     flex: 1,
@@ -188,31 +261,79 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  contentContainer: {
+    flexWrap: 'wrap',
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
-    padding: 20,
-    height: 'auto',
+    justifyContent: 'center',
+    margin: 8,
+    padding: 8,
+    borderRadius: 5,
+    marginBottom: 20,
   },
-  modalHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  inputContainer: {
+    flexWrap: 'wrap',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    margin: 8,
+    padding: 8,
+    backgroundColor: 'rgba(30,30,30,0.7)', 
+    borderRadius: 5,
+    marginBottom: 20,
   },
   input: {
+    width: 325,
     borderWidth: 1,
-    borderColor: 'gray',
-    padding: 10,
-    marginBottom: 10,
-    width: '100%',
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 8,
+    marginRight: 8,
+    color: '#333',
+    backgroundColor: 'white',
   },
   qrScanner: {
     width: '100%',
     height: 200,
     marginBottom: 10,
+    borderWidth: 2,
+    borderColor: '#3498db',
   },
+  cameraToggleButton: {
+    backgroundColor: '#3498db',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  dateLabel: {
+    color: 'white',
+    fontSize: 15,
+    marginLeft: 8,
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    marginTop: 10,
+  },
+  successMessage: {
+    color: 'green',
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  errorMessage: {
+    color: 'red',
+    fontSize: 16,
+    marginBottom: 10,
+  },  
+  scanAgainButton: {
+    backgroundColor: '#3498db',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 10,
+  }
 });
 
 export default AddGroceriesInput;

@@ -1,0 +1,1 @@
+export const serverUrl = 'http://sneeze.internet-box.ch:3006';

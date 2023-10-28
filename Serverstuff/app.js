@@ -133,7 +133,7 @@ app.get('/api/user-items', async (req, res) => {
 app.get('/api/community-items', async (req, res) => {
   try {
     // Query the database to fetch community items
-    const fetchCommunityItemsQuery = 'SELECT * FROM products WHERE "addtocommunity" = 1';
+    const fetchCommunityItemsQuery = 'SELECT * FROM products WHERE "addtocommunity" = 1 ORDER BY expiry_date';
     const { rows } = await pool.query(fetchCommunityItemsQuery);
     res.status(200).json(rows);
   } catch (error) {
@@ -441,6 +441,47 @@ app.get('/api/global-items/statistics', async (req, res) => {
     res.status(500).json({ error: 'An error occurred' });
   }
 });
+
+// API endpoint for updating a product's notification ID
+app.post('/api/update-product-notification', async (req, res) => {
+  try {
+    const { productId, notificationId } = req.body;
+
+    if (!productId || !notificationId) {
+      return res.status(400).json({ error: 'Invalid input data' });
+    }
+
+    const updateNotificationQuery = 'UPDATE products SET notification_id = $1 WHERE id = $2';
+    const { rowCount } = await pool.query(updateNotificationQuery, [notificationId, productId]);
+
+    if (rowCount === 1) {
+      res.status(200).json({ message: 'Notification added to the product successfully' });
+    } else {
+      res.status(404).json({ error: 'Product not found or notification not added' });
+    }
+  } catch (error) {
+    console.error('Error updating product notification:', error);
+    res.status(500).json({ error: 'An error occurred' });
+  }
+});
+
+// API endpoint to check if notification_id is null for an item
+app.get('/api/check-notification-id/:itemId', (req, res) => {
+  const { itemId } = req.params;
+
+  // Query the database to check if notification_id is null for the item
+  const checkNotificationIdQuery = 'SELECT notification_id FROM products WHERE id = $1';
+  pool.query(checkNotificationIdQuery, [itemId], (err, result) => {
+    if (err) {
+      console.error('Error checking notification ID:', err);
+      res.status(500).json({ error: 'An error occurred' });
+      return;
+    }
+    // Send whether notification_id is null or not as a response
+    res.status(200).json({ isNull: result.rows[0].notification_id === null });
+  });
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

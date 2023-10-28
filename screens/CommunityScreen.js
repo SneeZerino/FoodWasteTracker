@@ -4,8 +4,7 @@ import ResidentialDataForm from '../ResidentialDataForm';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-
-const serverUrl = 'http://sneeze.internet-box.ch:3006';
+import { serverUrl } from './config';
 
 const CommunityScreen = () => {
   const [communityItems, setCommunityItems] = useState([]);
@@ -173,29 +172,35 @@ const fetchCommunityItems = async () => {
             return (
               <View style={styles.itemContainer}>
                 <View style={styles.item}>
-                  <Text style={styles.itemText}>Name: {item.name}</Text>
-                  <Text style={styles.itemText}>Expiry Date: {formattedExpiryDate}</Text>
+                  <Text style={styles.itemText}>{item.name}</Text>
+                  <Text style={styles.itemExpiryText}>Expiry Date: {formattedExpiryDate}</Text>
                   <View style={styles.itemIcons}>
                     {isOwner ? (
-                      <Ionicons
-                        name="trash"
-                        size={24}
-                        color="red"
-                        style={styles.icon}
+                      <TouchableOpacity
                         onPress={() => handleRemoveFromCommunity(item.id)}
-                      />
+                      >
+                        <View style={styles.removeButton}>
+                        <Text style={styles.removeButtonText}>Remove item</Text>
+                          <Ionicons
+                          name="trash"
+                          size={24}
+                          color="red"
+                          style={styles.icon}
+                          />
+                        </View>
+                      </TouchableOpacity>
                     ) : (
                       <TouchableOpacity
                         onPress={() => handleTakeItem(item.id, item.ownerId)}
                       >
                         <View style={styles.requestButton}>
+                        <Text style={styles.requestButtonText}>Request item</Text>
                           <Ionicons
                             name="basket"
                             size={24}
                             color="green"
                             style={styles.icon}
                           />
-                          <Text style={styles.requestButtonText}>Request item</Text>
                         </View>
                       </TouchableOpacity>
                     )}
@@ -252,13 +257,18 @@ const styles = StyleSheet.create({
     borderColor: 'white',
     backgroundColor: 'white',
     borderRadius: 10,
-    padding: 16,
-    marginBottom: 16,
+    padding: 8,
+    marginBottom: 8,
     opacity: 0.85,
+    borderWidth: 2,
+    borderColor: '#3498db',
   },
   itemText: {
-    fontSize: 16,
-    marginBottom: 10,
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  itemExpiryText: {
+    fontSize: 13
   },
   modalContainer: {
     flex: 1,
@@ -277,6 +287,17 @@ const styles = StyleSheet.create({
   requestButton: {
     backgroundColor: 'transparent',
     borderColor: 'green',
+    borderWidth: 1,
+    padding: 10,
+    margin: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  removeButton: {
+    backgroundColor: 'transparent',
+    borderColor: 'red',
     borderWidth: 1,
     padding: 10,
     margin: 10,

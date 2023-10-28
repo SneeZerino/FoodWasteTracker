@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
-
-const serverUrl = 'http://sneeze.internet-box.ch:3006'; // Replace with your server URL
+import { serverUrl } from './config';
 
 function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
